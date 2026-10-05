@@ -9,5 +9,7 @@ app.get('/health', (_req, res) => {
 })
 
 app.listen(port, () => {
-  console.log(`api listening on :${port} (tokens-core: ${cssVarName('color.blue.500')})`)
+  console.log(
+    `api listening on :${port} (tokens-core: ${cssVarName('color.blue.500')})`,
+  )
 })

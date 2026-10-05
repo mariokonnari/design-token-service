@@ -30,6 +30,11 @@ The Vite `react-ts` template used to generate `apps/web` also pinned the 6.0 lin
 - 7.x was only installed to the point of resolving it; **typecheck was never run under 7.0.2 in this repository.** This ADR is therefore based on the ecosystem constraint (no stable programmatic API, no typescript-eslint support), not on a measured incompatibility in this codebase.
 - Package-level `typescript` pins are now a convention to enforce. Nothing prevents a new workspace (or a scaffolding template) from adding its own, and a second copy could silently diverge.
 
+## Sources
+
+- [Announcing TypeScript 7.0](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) (TypeScript team blog), for the native compiler line and its programmatic API status.
+- The `typescript-eslint` package on the npm registry declares a `typescript` peer range of `>=4.8.4 <6.1.0` (observed 2026-10-05 for typescript-eslint 8.71.0), so it does not accept 7.x as installed today.
+
 ## Revisit when
 
 TypeScript 7.1 ships a stable programmatic API **and** typescript-eslint supports it. At that point, evaluate moving the root pin to 7.x (single version, still one place).

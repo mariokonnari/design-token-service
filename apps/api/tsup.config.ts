@@ -7,6 +7,6 @@ export default defineConfig({
   clean: true,
   // Workspace packages export raw .ts (see ADR 0003). tsup externalizes
   // `dependencies` by default, which would leave an import of a .ts file that
-  // plain Node cannot load, so these must be bundled.
-  noExternal: ['@dts/tokens-core'],
+  // plain Node cannot load, so every workspace package must be bundled.
+  noExternal: [/^@dts\//],
 })

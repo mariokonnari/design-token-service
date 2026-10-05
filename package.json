@@ -1,6 +1,7 @@
 {
   "name": "design-token-service",
   "private": true,
+  "packageManager": "pnpm@12.9.1",
   "engines": {
     "node": ">=24",
     "pnpm": ">=12"
@@ -9,9 +10,20 @@
     "dev": "pnpm -r --parallel --if-present dev",
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "smoke:api": "node scripts/smoke-api.mjs"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0"
   }
 }

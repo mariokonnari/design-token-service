@@ -37,6 +37,11 @@ Consumers in this repo: `apps/web` (Vite), `apps/api` (`tsx` in development, pla
 - **Build-time generation of the `ui` default theme CSS** (from ADR 0001/0002) benefits: it can run `tokens-core` straight from source, so there is no build-order dependency between the two packages. Whether the generated CSS is committed or generated during the build is still undecided.
 - **Duplicate-dependency risk is higher.** Because library source is compiled in the consumer's context, a second copy of `react` or `react-dom` from the library's own `node_modules` would produce two React instances. The workspace is therefore held to a single copy of each, and `ui` declares `react` as a peer dependency with a broad range (and as a devDependency for its own tests).
 
+## Update (2026-10-05)
+
+- The `noExternal` list is now the pattern `/^@dts\//` in `apps/api/tsup.config.ts`, so every workspace package is bundled automatically and the "forgot to list a new package" failure no longer applies.
+- The built-output smoke test is automated: `pnpm smoke:api` (`scripts/smoke-api.mjs`) runs after `pnpm build` locally and in CI. It catches a bundle that cannot be started with plain Node; it does not check that a specific package was bundled.
+
 ## Revisit when
 
 - `@dts/ui` (or `tokens-core`) needs to be published or consumed outside this repo.
