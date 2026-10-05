@@ -1,3 +1,4 @@
+import { isFontWeightName } from './fontWeights'
 import { error, hasError, warning } from './issues'
 import type {
   Dimension,
@@ -29,27 +30,6 @@ const SPEC_COLOR_SPACES = new Set([
   'rec2020',
   'xyz-d65',
   'xyz-d50',
-])
-
-const FONT_WEIGHT_NAMES = new Set([
-  'thin',
-  'hairline',
-  'extra-light',
-  'ultra-light',
-  'light',
-  'normal',
-  'regular',
-  'book',
-  'medium',
-  'semi-bold',
-  'demi-bold',
-  'bold',
-  'extra-bold',
-  'ultra-bold',
-  'black',
-  'heavy',
-  'extra-black',
-  'ultra-black',
 ])
 
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/
@@ -294,14 +274,45 @@ function validateDimension(
   return done(issues, { value, unit: unit as Dimension['unit'] })
 }
 
+/**
+ * Font names are written into CSS strings, so text that cannot be written
+ * safely there is rejected rather than escaped: ASCII control characters
+ * (U+0000-U+001F and U+007F) and lone UTF-16 surrogates, which would make the
+ * output ill-formed Unicode. Valid surrogate pairs and non-ASCII text are fine.
+ */
+function unsafeTextReason(text: string): string | undefined {
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    if (code <= 0x1f || code === 0x7f) {
+      return 'ASCII control characters are not allowed in a font name'
+    }
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = text.charCodeAt(i + 1)
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        i++
+        continue
+      }
+      return 'A font name must not contain a lone surrogate'
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) {
+      return 'A font name must not contain a lone surrogate'
+    }
+  }
+  return undefined
+}
+
 function validateFontFamily(
   raw: unknown,
   path: string,
 ): ValidationResult<FontFamily> {
   if (typeof raw === 'string') {
-    return raw.trim() === ''
-      ? fail([invalid(path, 'A font name must not be empty', '$value')])
-      : done([], raw)
+    if (raw.trim() === '') {
+      return fail([invalid(path, 'A font name must not be empty', '$value')])
+    }
+    const reason = unsafeTextReason(raw)
+    return reason === undefined
+      ? done([], raw)
+      : fail([invalid(path, reason, '$value')])
   }
   if (!Array.isArray(raw) || raw.length === 0) {
     return fail([
@@ -321,16 +332,21 @@ function validateFontFamily(
       issues.push(
         invalid(path, 'Each font name must be a non-empty string', field),
       )
-    } else if (looksLikeAlias(name)) {
-      issues.push(
-        unsupported(
-          path,
-          'References inside a fontFamily array are not supported',
-          field,
-        ),
-      )
     } else {
-      names.push(name)
+      const reason = unsafeTextReason(name)
+      if (reason !== undefined) {
+        issues.push(invalid(path, reason, field))
+      } else if (looksLikeAlias(name)) {
+        issues.push(
+          unsupported(
+            path,
+            'References inside a fontFamily array are not supported',
+            field,
+          ),
+        )
+      } else {
+        names.push(name)
+      }
     }
   })
   return done(issues, names)
@@ -342,7 +358,7 @@ function validateFontWeight(
 ): ValidationResult<FontWeight> {
   const ok =
     (isFiniteNumber(raw) && raw >= 1 && raw <= 1000) ||
-    (typeof raw === 'string' && FONT_WEIGHT_NAMES.has(raw))
+    (typeof raw === 'string' && isFontWeightName(raw))
   return ok
     ? done([], raw)
     : fail([

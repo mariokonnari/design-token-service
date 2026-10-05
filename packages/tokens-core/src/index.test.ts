@@ -10,15 +10,23 @@ describe('public API', () => {
         'TOKEN_TYPES',
         'checkTiers',
         'comparePaths',
+        'contrastRatio',
         'cssVarName',
+        'flattenAlpha',
         'flatten',
+        'fontWeightToNumber',
         'isValidName',
         'joinPath',
         'nest',
         'parseAlias',
+        'parseHex',
+        'relativeLuminance',
         'resolve',
         'splitPath',
         'tierOf',
+        'toCssVariables',
+        'toHex',
+        'toResolvedTree',
         'validateLiteral',
       ].sort(),
     )
@@ -37,6 +45,7 @@ describe('public API', () => {
         'INVALID_VALUE',
         'HEX_MISMATCH',
         'PATH_CONFLICT',
+        'CSS_NAME_COLLISION',
         'ALIAS_NOT_FOUND',
         'ALIAS_TARGET_INVALID',
         'ALIAS_CYCLE',
@@ -46,7 +55,11 @@ describe('public API', () => {
     )
   })
 
-  it('runs the whole pipeline end to end', () => {
+  it('keeps cssVarName working', () => {
+    expect(api.cssVarName('color.blue.500')).toBe('--color-blue-500')
+  })
+
+  it('runs the whole pipeline end to end, including both exporters', () => {
     const flat = api.flatten({
       primitive: {
         color: {
@@ -69,5 +82,21 @@ describe('public API', () => {
       'semantic.action',
     ])
     expect(api.checkTiers(flat.tokens)).toEqual([])
+
+    const css = api.toCssVariables(resolved.resolved, {
+      include: ['semantic', 'component'],
+    })
+    expect(css.issues).toEqual([])
+    expect(css.css).toBe(
+      ':root {\n  --component-button-bg: #0000ff;\n  --semantic-action: #0000ff;\n}\n',
+    )
+
+    const json = api.toResolvedTree(resolved.resolved)
+    expect(json.issues).toEqual([])
+    expect(Object.keys(json.tree)).toEqual([
+      'component',
+      'primitive',
+      'semantic',
+    ])
   })
 })

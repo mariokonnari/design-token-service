@@ -1,8 +1,11 @@
 import type {
   AliasToken,
+  FontFamily,
+  FontWeight,
   Issue,
   IssueCode,
   LiteralToken,
+  SrgbColor,
   TokenType,
 } from './types'
 
@@ -25,6 +28,26 @@ export function dim(
   unit: 'px' | 'rem' = 'px',
 ): LiteralToken {
   return { path, type: 'dimension', value: { value, unit } }
+}
+
+export function colorA(
+  path: string,
+  components: [number, number, number],
+  alpha?: number,
+  hex?: string,
+): LiteralToken {
+  const value: SrgbColor = { colorSpace: 'srgb', components }
+  if (alpha !== undefined) value.alpha = alpha
+  if (hex !== undefined) value.hex = hex
+  return { path, type: 'color', value }
+}
+
+export function fontFamily(path: string, value: FontFamily): LiteralToken {
+  return { path, type: 'fontFamily', value }
+}
+
+export function fontWeight(path: string, value: FontWeight): LiteralToken {
+  return { path, type: 'fontWeight', value }
 }
 
 export function alias(

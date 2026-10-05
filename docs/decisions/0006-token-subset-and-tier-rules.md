@@ -97,3 +97,7 @@ This replaces "components consume only semantic tokens" from ADR 0002. `checkTie
 - Allowing literals in semantic and component tiers weakens the "change a brand in one place" story: a literal there will not follow a primitive change. A future lint-like warning or a stricter rule may be worth adding.
 - The 8-bit tolerance means a `hex` that is off by one step is never reported, which is intentional but means `hex` is only a loose fallback check.
 - Property tests use bounded run counts and simple generators to keep CI fast; they will not find every edge case.
+
+## Update (2026-10-05)
+
+Correction: this ADR implies that strict names avoid collisions (see the alternative "Use the spec's name rules"). They do not. Strict names make paths safe to turn into CSS identifiers, but two different paths can still map to the same variable name: `a.b-c` and `a-b.c` both become `--a-b-c`. The CSS exporter detects this and omits all colliding tokens with `CSS_NAME_COLLISION` (see [ADR 0007](0007-css-export-and-contrast.md)); nothing in `flatten()` or `resolve()` prevents it.

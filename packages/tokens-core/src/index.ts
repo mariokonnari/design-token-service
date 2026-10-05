@@ -1,4 +1,16 @@
+export {
+  contrastRatio,
+  flattenAlpha,
+  parseHex,
+  relativeLuminance,
+  toHex,
+} from './color'
+export type { Rgb } from './color'
+export { toCssVariables } from './css'
+export type { CssOptions, CssResult, CssScope } from './css'
 export { cssVarName } from './cssVarName'
+export { fontWeightToNumber } from './fontWeights'
+export { toResolvedTree } from './json'
 export {
   comparePaths,
   isValidName,
