@@ -1,0 +1,105 @@
+/* GENERATED FILE - DO NOT EDIT.
+ * Source: packages/ui/tokens/*.tokens.json, built with @dts/tokens-core
+ * (flatten, resolve, checkTiers, toCssVariables).
+ * Regenerate with: pnpm generate:theme
+ */
+
+[data-theme="default"] {
+  --component-button-bg-disabled: #e5e8eb;
+  --component-button-bg-primary: #2563eb;
+  --component-button-bg-primary-hover: #1d4ed8;
+  --component-button-bg-secondary: #ffffff;
+  --component-button-bg-secondary-hover: #f1f3f5;
+  --component-button-border-secondary: #868e96;
+  --component-button-border-width: 1px;
+  --component-button-focus-ring-offset: 2px;
+  --component-button-focus-ring-width: 2px;
+  --component-button-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --component-button-font-size-md: 1rem;
+  --component-button-font-size-sm: 0.875rem;
+  --component-button-font-weight: 500;
+  --component-button-gap: 0.5rem;
+  --component-button-min-size-md: 36px;
+  --component-button-min-size-sm: 28px;
+  --component-button-padding-x-md: 1rem;
+  --component-button-padding-x-sm: 0.5rem;
+  --component-button-padding-y-md: 0.5rem;
+  --component-button-padding-y-sm: 0.25rem;
+  --component-button-radius: 6px;
+  --component-button-text-disabled: #adb5bd;
+  --component-button-text-primary: #ffffff;
+  --component-button-text-secondary: #1a1d21;
+  --semantic-border-width-control: 1px;
+  --semantic-border-width-focus: 2px;
+  --semantic-color-action-on-primary: #ffffff;
+  --semantic-color-action-primary: #2563eb;
+  --semantic-color-action-primary-hover: #1d4ed8;
+  --semantic-color-border: #868e96;
+  --semantic-color-danger: #dc2626;
+  --semantic-color-focus-ring: #2563eb;
+  --semantic-color-surface: #ffffff;
+  --semantic-color-surface-disabled: #e5e8eb;
+  --semantic-color-surface-hover: #f1f3f5;
+  --semantic-color-text: #1a1d21;
+  --semantic-color-text-disabled: #adb5bd;
+  --semantic-color-text-muted: #5f6770;
+  --semantic-font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --semantic-font-size-md: 1rem;
+  --semantic-font-size-sm: 0.875rem;
+  --semantic-font-weight-control: 500;
+  --semantic-radius-control: 6px;
+  --semantic-space-gap-sm: 0.5rem;
+  --semantic-space-inset-md: 1rem;
+  --semantic-space-inset-sm: 0.5rem;
+  --semantic-space-inset-xs: 0.25rem;
+}
+
+[data-theme="acme"] {
+  --component-button-bg-disabled: #e5e8eb;
+  --component-button-bg-primary: #7c3aed;
+  --component-button-bg-primary-hover: #6d28d9;
+  --component-button-bg-secondary: #ffffff;
+  --component-button-bg-secondary-hover: #f1f3f5;
+  --component-button-border-secondary: #868e96;
+  --component-button-border-width: 1px;
+  --component-button-focus-ring-offset: 2px;
+  --component-button-focus-ring-width: 2px;
+  --component-button-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --component-button-font-size-md: 1rem;
+  --component-button-font-size-sm: 0.875rem;
+  --component-button-font-weight: 500;
+  --component-button-gap: 0.5rem;
+  --component-button-min-size-md: 36px;
+  --component-button-min-size-sm: 28px;
+  --component-button-padding-x-md: 1rem;
+  --component-button-padding-x-sm: 0.5rem;
+  --component-button-padding-y-md: 0.5rem;
+  --component-button-padding-y-sm: 0.25rem;
+  --component-button-radius: 12px;
+  --component-button-text-disabled: #adb5bd;
+  --component-button-text-primary: #ffffff;
+  --component-button-text-secondary: #1a1d21;
+  --semantic-border-width-control: 1px;
+  --semantic-border-width-focus: 2px;
+  --semantic-color-action-on-primary: #ffffff;
+  --semantic-color-action-primary: #7c3aed;
+  --semantic-color-action-primary-hover: #6d28d9;
+  --semantic-color-border: #868e96;
+  --semantic-color-danger: #dc2626;
+  --semantic-color-focus-ring: #7c3aed;
+  --semantic-color-surface: #ffffff;
+  --semantic-color-surface-disabled: #e5e8eb;
+  --semantic-color-surface-hover: #f1f3f5;
+  --semantic-color-text: #1a1d21;
+  --semantic-color-text-disabled: #adb5bd;
+  --semantic-color-text-muted: #5f6770;
+  --semantic-font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --semantic-font-size-md: 1rem;
+  --semantic-font-size-sm: 0.875rem;
+  --semantic-font-weight-control: 500;
+  --semantic-radius-control: 12px;
+  --semantic-space-gap-sm: 0.5rem;
+  --semantic-space-inset-md: 1rem;
+  --semantic-space-inset-sm: 0.5rem;
+  --semantic-space-inset-xs: 0.25rem;
+}

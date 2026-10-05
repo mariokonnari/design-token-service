@@ -2,9 +2,10 @@
 
 A multi-tenant Design Token & Theming service. Teams log in, manage their brand's design tokens (color, spacing, typography), preview them live against an accessible React component library, and export them as CSS variables or JSON.
 
-> Status: scaffolded pnpm monorepo with ESLint + Prettier (import-boundary rules), a built-output API smoke test and GitHub Actions CI. `apps/web`, `apps/api` (`GET /health`) and `packages/ui` are still placeholders with one test each.
+> Status: scaffolded pnpm monorepo with ESLint + Prettier (import-boundary rules), a built-output API smoke test and GitHub Actions CI. `apps/web` and `apps/api` (`GET /health`) are still placeholders.
+> `packages/ui` now has a foundation (ADR 0008): themes generated from `tokens/*.tokens.json` into the committed `src/themes.generated.css` (`pnpm generate:theme`, drift-checked in CI), `ThemeScope`, an accessible `Button`, tests that enforce the styling rules (no primitives, no raw colors, no `var()` fallbacks, every variable defined in every theme, token contrast), and Storybook with the a11y addon and a theme toggle (`pnpm --filter @dts/ui storybook`).
 > `packages/tokens-core` now has the real token model: `flatten`/`nest`, literal validation, alias `resolve` with cycle detection, and `checkTiers` (ADR 0006), plus the exporters `toCssVariables` (scoped CSS custom properties, collision detection, escaping) and `toResolvedTree` (JSON), and sRGB color/contrast utilities (WCAG 2.x) (ADR 0007).
-> Not built yet: Prisma/PostgreSQL, JWT auth, Storybook, axe tests, any API or editor use of the exporters, APCA. The layout below is the **target**; anything listed there beyond the above is still planned.
+> Not built yet: Prisma/PostgreSQL, JWT auth, any API or editor use of the exporters, components beyond `Button`, APCA. The layout below is the **target**; anything listed there beyond the above is still planned.
 
 ## Target layout
 
@@ -17,6 +18,11 @@ packages/
                   with cycle detection, validation, exporters
   ui/             Accessible React components consuming CSS custom properties;
                   Storybook, Testing Library + axe
+    tokens/       default.tokens.json (complete base) and <slug>.tokens.json
+                  overlays (e.g. acme), the source of the theme CSS
+    scripts/      build-theme.ts and lib/ (token files -> themes.generated.css)
+    src/          components, ThemeScope, committed themes.generated.css
+    test/         enforcement tests (styling rules, contrast, drift)
 docs/
   decisions/      Architecture Decision Records (ADRs)
 ```
@@ -31,7 +37,7 @@ docs/
 
 The two `ui`/`tokens-core` import boundaries above are enforced by ESLint (`no-restricted-imports`, see ADR 0005). Workspace packages are consumed as TypeScript source (ADR 0003), so `apps/api` bundles them with tsup.
 
-Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md), [0006 token subset and tier rules](docs/decisions/0006-token-subset-and-tier-rules.md), [0007 CSS export and contrast](docs/decisions/0007-css-export-and-contrast.md).
+Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md), [0006 token subset and tier rules](docs/decisions/0006-token-subset-and-tier-rules.md), [0007 CSS export and contrast](docs/decisions/0007-css-export-and-contrast.md), [0008 UI styling and theme generation](docs/decisions/0008-ui-styling-and-theme-generation.md).
 
 ## Token architecture
 
@@ -84,4 +90,5 @@ The same sequence CI runs must pass locally:
 - `pnpm format:check` passes (run `pnpm format` to fix; Markdown is not formatted).
 - `pnpm test` passes.
 - `pnpm build` passes, and `pnpm smoke:api` passes against the built output.
+- `pnpm generate:theme` leaves no diff (the committed `packages/ui/src/themes.generated.css` is up to date), and `pnpm --filter @dts/ui build-storybook` passes.
 - No TODOs left silently. Any TODO must be called out in the report or tracked explicitly.

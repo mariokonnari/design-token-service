@@ -1,0 +1,78 @@
+{
+  "primitive": {
+    "color": {
+      "$type": "color",
+      "brand": {
+        "50": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9608, 0.9529, 1]
+          }
+        },
+        "100": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9294, 0.9137, 0.9961]
+          }
+        },
+        "200": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.8667, 0.8392, 0.9961]
+          }
+        },
+        "300": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.7686, 0.7098, 0.9922]
+          }
+        },
+        "400": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6549, 0.5451, 0.9804]
+          }
+        },
+        "500": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.5451, 0.3608, 0.9647]
+          }
+        },
+        "600": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4863, 0.2275, 0.9294]
+          }
+        },
+        "700": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4275, 0.1569, 0.851]
+          }
+        },
+        "800": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.1294, 0.7137]
+          }
+        },
+        "900": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.298, 0.1137, 0.5843]
+          }
+        }
+      }
+    },
+    "radius": {
+      "$type": "dimension",
+      "md": {
+        "$value": {
+          "value": 12,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

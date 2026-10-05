@@ -30,3 +30,12 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm smoke:api
+
+      # The committed theme CSS must match the token files (ADR 0008).
+      - run: pnpm --filter @dts/ui generate:theme
+      - name: Generated theme CSS is tracked and unchanged
+        run: |
+          git ls-files --error-unmatch packages/ui/src/themes.generated.css
+          git diff --exit-code -- packages/ui/src/themes.generated.css
+
+      - run: pnpm --filter @dts/ui build-storybook

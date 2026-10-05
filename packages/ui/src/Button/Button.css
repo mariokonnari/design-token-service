@@ -1,0 +1,85 @@
+/*
+ * Button styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ */
+
+.dts-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--component-button-gap);
+  min-width: var(--component-button-min-size-md);
+  min-height: var(--component-button-min-size-md);
+  padding: var(--component-button-padding-y-md)
+    var(--component-button-padding-x-md);
+  border: var(--component-button-border-width) solid transparent;
+  border-radius: var(--component-button-radius);
+  font-family: var(--component-button-font-family);
+  font-size: var(--component-button-font-size-md);
+  font-weight: var(--component-button-font-weight);
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.dts-button[data-size='sm'] {
+  min-width: var(--component-button-min-size-sm);
+  min-height: var(--component-button-min-size-sm);
+  padding: var(--component-button-padding-y-sm)
+    var(--component-button-padding-x-sm);
+  font-size: var(--component-button-font-size-sm);
+}
+
+.dts-button[data-variant='primary'] {
+  background-color: var(--component-button-bg-primary);
+  color: var(--component-button-text-primary);
+}
+
+.dts-button[data-variant='primary']:hover:not(:disabled) {
+  background-color: var(--component-button-bg-primary-hover);
+}
+
+.dts-button[data-variant='secondary'] {
+  background-color: var(--component-button-bg-secondary);
+  border-color: var(--component-button-border-secondary);
+  color: var(--component-button-text-secondary);
+}
+
+.dts-button[data-variant='secondary']:hover:not(:disabled) {
+  background-color: var(--component-button-bg-secondary-hover);
+}
+
+/* An outline (not box-shadow) so the focus ring survives forced-colors mode. */
+.dts-button:focus-visible {
+  outline: var(--component-button-focus-ring-width) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: var(--component-button-focus-ring-offset);
+}
+
+.dts-button[data-variant]:disabled {
+  background-color: var(--component-button-bg-disabled);
+  border-color: transparent;
+  color: var(--component-button-text-disabled);
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dts-button {
+    transition: none;
+  }
+}
+
+/* Forced colors replaces our colors with system colors; keep borders and state visible. */
+@media (forced-colors: active) {
+  .dts-button {
+    border-color: ButtonText;
+  }
+
+  .dts-button[data-variant]:disabled {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

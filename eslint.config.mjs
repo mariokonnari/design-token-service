@@ -16,7 +16,12 @@ const tokensCoreForbidden = [
 ]
 
 export default defineConfig([
-  globalIgnores(['**/dist/**', '**/coverage/**', '**/node_modules/**']),
+  globalIgnores([
+    '**/dist/**',
+    '**/coverage/**',
+    '**/node_modules/**',
+    '**/storybook-static/**',
+  ]),
 
   js.configs.recommended,
 
