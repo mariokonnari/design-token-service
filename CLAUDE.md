@@ -2,8 +2,9 @@
 
 A multi-tenant Design Token & Theming service. Teams log in, manage their brand's design tokens (color, spacing, typography), preview them live against an accessible React component library, and export them as CSS variables or JSON.
 
-> Status: scaffolded pnpm monorepo. All four workspaces exist with placeholder code and one test each (`apps/web`, `apps/api` with `GET /health`, `packages/tokens-core`, `packages/ui`), plus ESLint + Prettier with import-boundary rules, a built-output API smoke test, and GitHub Actions CI.
-> Not built yet: Prisma/PostgreSQL, JWT auth, Storybook, axe tests, and any real token logic (parsing, alias resolution, validation, exporters). The layout below is the **target**; anything listed there beyond the above is still planned.
+> Status: scaffolded pnpm monorepo with ESLint + Prettier (import-boundary rules), a built-output API smoke test and GitHub Actions CI. `apps/web`, `apps/api` (`GET /health`) and `packages/ui` are still placeholders with one test each.
+> `packages/tokens-core` now has the real token model: `flatten`/`nest`, literal validation, alias `resolve` with cycle detection, and `checkTiers` (ADR 0006). Exporters (CSS variables, JSON) are not built yet.
+> Not built yet: Prisma/PostgreSQL, JWT auth, Storybook, axe tests, exporters. The layout below is the **target**; anything listed there beyond the above is still planned.
 
 ## Target layout
 
@@ -30,30 +31,40 @@ docs/
 
 The two `ui`/`tokens-core` import boundaries above are enforced by ESLint (`no-restricted-imports`, see ADR 0005). Workspace packages are consumed as TypeScript source (ADR 0003), so `apps/api` bundles them with tsup.
 
-Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md).
+Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md), [0006 token subset and tier rules](docs/decisions/0006-token-subset-and-tier-rules.md).
 
 ## Token architecture
 
-Tokens are W3C DTCG-style JSON (`$value` / `$type`). Aliases reference other tokens with `{path.to.token}`.
+Tokens are W3C DTCG-style JSON (`$value` / `$type`), a documented **subset** of spec 2025.10, not a conforming implementation (ADR 0006). Supported types: `color` (srgb only), `dimension`, `fontFamily`, `fontWeight`, `number`. Aliases reference other tokens with `{path.to.token}`. Path segments must match `^[a-z0-9]+(-[a-z0-9]+)*$` because they become CSS variable names.
 
-Three tiers, each referencing only the tier below it:
+Three tiers, as the top-level groups `primitive`, `semantic` and `component`:
 
-1. **Primitive** — raw values (`color.blue.500`, `space.4`).
-2. **Semantic** — intent, aliasing primitives (`color.action.primary` -> `{color.blue.500}`).
-3. **Component** — component-specific, aliasing semantic tokens (`button.background` -> `{color.action.primary}`).
+1. **Primitive**: literal values only (`primitive.color.blue-500`).
+2. **Semantic**: intent; may alias primitive or semantic tokens (`semantic.color.action` -> `{primitive.color.blue-500}`).
+3. **Component**: component-specific; may alias semantic or component tokens (`component.button.background` -> `{semantic.color.action}`).
 
-**Components consume only semantic tokens.** They never reference primitives directly.
+**UI components never reference primitive tokens; they use semantic and component tokens.** Semantic and component tokens may also hold literals (a policy that may tighten later).
 
 ```json
 {
-  "color": {
-    "blue": { "500": { "$type": "color", "$value": "#2563eb" } },
-    "action": { "primary": { "$type": "color", "$value": "{color.blue.500}" } }
+  "primitive": {
+    "color": {
+      "blue-500": {
+        "$type": "color",
+        "$value": { "colorSpace": "srgb", "components": [0.145, 0.388, 0.922] }
+      }
+    }
+  },
+  "semantic": {
+    "color": { "action": { "$value": "{primitive.color.blue-500}" } }
+  },
+  "component": {
+    "button": { "background": { "$value": "{semantic.color.action}" } }
   }
 }
 ```
 
-(Illustrative only; the supported subset and value shapes are defined in ADR 0002 and will be documented when the schema is finalized.)
+An alias token takes its type from its target. Problems are returned as issues (`{ code, severity, path, message, field?, related? }`), never thrown.
 
 ## Working agreements
 

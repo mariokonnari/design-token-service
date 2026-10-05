@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-05
+- Refined by [0006](0006-token-subset-and-tier-rules.md) (supported subset, strict names, tier rules; the "components consume only semantic tokens" wording below is superseded there)
 
 ## Context
 
