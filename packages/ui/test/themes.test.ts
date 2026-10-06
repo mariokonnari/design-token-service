@@ -71,9 +71,18 @@ describe('token source files', () => {
       'semantic.color.action.primary',
       'semantic.color.action.primary-hover',
       'semantic.color.action.on-primary',
-      'semantic.color.danger',
       'semantic.color.focus-ring',
+      'semantic.color.input-border',
+      'semantic.color.placeholder',
+      ...['info', 'success', 'warning', 'danger'].flatMap((role) => [
+        `semantic.color.${role}.surface`,
+        `semantic.color.${role}.text`,
+        `semantic.color.${role}.border`,
+      ]),
       'component.button.bg-primary',
+      'component.textfield.bg',
+      'component.checkbox.accent',
+      'component.alert.info-bg',
     ]) {
       expect(paths.has(required), required).toBe(true)
     }
@@ -110,7 +119,7 @@ describe('buildThemes', () => {
     for (const names of rest) expect(names).toEqual(first)
   })
 
-  it('the acme overlay changes the brand-derived values and the radius, and nothing else', () => {
+  it('the acme overlay changes the brand-derived values and the radius, and nothing else (status roles keep their own colors)', () => {
     const css = renderThemesCss(builds)
     const base = declarationsOf(css, 'default')
     const acme = declarationsOf(css, 'acme')
@@ -122,6 +131,9 @@ describe('buildThemes', () => {
         '--component-button-bg-primary',
         '--component-button-bg-primary-hover',
         '--component-button-radius',
+        '--component-checkbox-accent',
+        '--component-textfield-radius',
+        '--component-alert-radius',
         '--semantic-color-action-primary',
         '--semantic-color-action-primary-hover',
         '--semantic-color-focus-ring',

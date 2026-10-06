@@ -1,101 +1,29 @@
 import { contrastRatio, type ResolvedToken, type Rgb } from '@dts/tokens-core'
 
-export interface Pair {
-  /** A short label for reports. */
+export type PairKind = 'text' | 'non-text'
+
+/** WCAG 2.x minimums: 4.5 for text, 3 for non-text UI parts. */
+export const MIN_BY_KIND: Record<PairKind, number> = {
+  text: 4.5,
+  'non-text': 3,
+}
+
+export interface ContrastPair {
+  /** The component the pair belongs to, as in `src/<Name>/` (or `Semantic` for shared roles). */
+  component: string
+  /** A short label for reports, unique within its component. */
   id: string
+  kind: PairKind
   foreground: string
+  /** The color the foreground really renders on: the surface it sits on, not a convenient token. */
   background: string
-  /** WCAG 2.x minimum: 4.5 for text, 3 for non-text UI parts and large text. */
   min: number
 }
 
-export interface PairResult extends Pair {
+export interface PairResult extends ContrastPair {
   ratio: number
   ok: boolean
 }
-
-const TEXT = 4.5
-const NON_TEXT = 3
-
-/** Pairs the design system relies on, from the semantic tokens. */
-export const SEMANTIC_PAIRS: readonly Pair[] = [
-  {
-    id: 'text on surface',
-    foreground: 'semantic.color.text',
-    background: 'semantic.color.surface',
-    min: TEXT,
-  },
-  {
-    id: 'text-muted on surface',
-    foreground: 'semantic.color.text-muted',
-    background: 'semantic.color.surface',
-    min: TEXT,
-  },
-  {
-    id: 'on-primary on action-primary',
-    foreground: 'semantic.color.action.on-primary',
-    background: 'semantic.color.action.primary',
-    min: TEXT,
-  },
-  {
-    id: 'on-primary on action-primary-hover',
-    foreground: 'semantic.color.action.on-primary',
-    background: 'semantic.color.action.primary-hover',
-    min: TEXT,
-  },
-  {
-    id: 'focus-ring on surface',
-    foreground: 'semantic.color.focus-ring',
-    background: 'semantic.color.surface',
-    min: NON_TEXT,
-  },
-  {
-    id: 'border on surface',
-    foreground: 'semantic.color.border',
-    background: 'semantic.color.surface',
-    min: NON_TEXT,
-  },
-  {
-    id: 'danger on surface',
-    foreground: 'semantic.color.danger',
-    background: 'semantic.color.surface',
-    min: TEXT,
-  },
-]
-
-/** Every text/background pair the Button actually uses, from the component.button tokens. */
-export const BUTTON_PAIRS: readonly Pair[] = [
-  {
-    id: 'button text-primary on bg-primary',
-    foreground: 'component.button.text-primary',
-    background: 'component.button.bg-primary',
-    min: TEXT,
-  },
-  {
-    id: 'button text-primary on bg-primary-hover',
-    foreground: 'component.button.text-primary',
-    background: 'component.button.bg-primary-hover',
-    min: TEXT,
-  },
-  {
-    id: 'button text-secondary on bg-secondary',
-    foreground: 'component.button.text-secondary',
-    background: 'component.button.bg-secondary',
-    min: TEXT,
-  },
-  {
-    id: 'button text-secondary on bg-secondary-hover',
-    foreground: 'component.button.text-secondary',
-    background: 'component.button.bg-secondary-hover',
-    min: TEXT,
-  },
-  {
-    id: 'button border-secondary on the surface',
-    foreground: 'component.button.border-secondary',
-    background: 'semantic.color.surface',
-    min: NON_TEXT,
-  },
-]
 
 function colorOf(resolved: readonly ResolvedToken[], path: string): Rgb {
   const token = resolved.find((candidate) => candidate.path === path)
@@ -111,7 +39,7 @@ function colorOf(resolved: readonly ResolvedToken[], path: string): Rgb {
 
 export function evaluatePairs(
   resolved: readonly ResolvedToken[],
-  pairs: readonly Pair[],
+  pairs: readonly ContrastPair[],
 ): PairResult[] {
   return pairs.map((pair) => {
     const ratio = contrastRatio(
@@ -122,14 +50,50 @@ export function evaluatePairs(
   })
 }
 
+/** Structural problems in a registry: duplicates, empty fields, or a minimum below its kind's. */
+export function validateRegistry(pairs: readonly ContrastPair[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+  for (const pair of pairs) {
+    const key = `${pair.component} / ${pair.id}`
+    if (seen.has(key)) problems.push(`${key}: duplicate entry`)
+    seen.add(key)
+    if (pair.component === '' || pair.id === '') {
+      problems.push(`${key}: component and id must not be empty`)
+    }
+    if (pair.foreground === '' || pair.background === '') {
+      problems.push(`${key}: foreground and background must be named`)
+    }
+    const required = MIN_BY_KIND[pair.kind] as number | undefined
+    if (required === undefined) {
+      problems.push(`${key}: unknown kind "${String(pair.kind)}"`)
+    } else if (pair.min < required) {
+      problems.push(
+        `${key}: min ${pair.min} is below the WCAG minimum ${required} for ${pair.kind}`,
+      )
+    }
+  }
+  return problems
+}
+
 /** The WCAG 2.2 target-size minimum, in CSS pixels. */
 export const MIN_TARGET_PX = 24
 
-/** Button minimum sizes that are not px or fall under the target-size minimum. */
-export function minSizeProblems(resolved: readonly ResolvedToken[]): string[] {
+/** Tokens that set a control's minimum size; each must be px and at least 24. */
+export const MIN_SIZE_TOKENS = [
+  'component.button.min-size-sm',
+  'component.button.min-size-md',
+  'component.textfield.min-size',
+  'component.checkbox.min-size',
+] as const
+
+/** Minimum-size tokens that are missing, not px, or fall under the target-size minimum. */
+export function minSizeProblems(
+  resolved: readonly ResolvedToken[],
+  paths: readonly string[] = MIN_SIZE_TOKENS,
+): string[] {
   const problems: string[] = []
-  for (const size of ['sm', 'md']) {
-    const path = `component.button.min-size-${size}`
+  for (const path of paths) {
     const token = resolved.find((candidate) => candidate.path === path)
     if (token?.type !== 'dimension') {
       problems.push(`${path} is missing or not a dimension`)

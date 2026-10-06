@@ -1,0 +1,100 @@
+/*
+ * TextField styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ * Label, description, hint and error text sit on the page surface; only the
+ * input's own text and placeholder sit on the input background (the contrast
+ * registry in test/contrastPairs.ts mirrors that).
+ */
+
+.dts-textfield {
+  display: flex;
+  flex-direction: column;
+  gap: var(--component-textfield-gap);
+  font-family: var(--component-textfield-font-family);
+  font-size: var(--component-textfield-font-size);
+}
+
+.dts-textfield__label {
+  color: var(--component-textfield-label-text);
+  font-weight: var(--component-textfield-label-weight);
+}
+
+.dts-textfield__required {
+  color: var(--component-textfield-required-text);
+  font-weight: normal;
+}
+
+.dts-textfield__description {
+  margin: 0;
+  color: var(--component-textfield-description-text);
+  font-size: var(--component-textfield-description-size);
+}
+
+.dts-textfield__input {
+  box-sizing: border-box;
+  min-height: var(--component-textfield-min-size);
+  padding: var(--component-textfield-padding-y)
+    var(--component-textfield-padding-x);
+  border: var(--component-textfield-border-width) solid
+    var(--component-textfield-border);
+  border-radius: var(--component-textfield-radius);
+  background-color: var(--component-textfield-bg);
+  color: var(--component-textfield-text);
+  font: inherit;
+}
+
+.dts-textfield__input::placeholder {
+  color: var(--component-textfield-placeholder);
+  opacity: 1;
+}
+
+.dts-textfield__input[aria-invalid='true'] {
+  border-color: var(--component-textfield-border-invalid);
+}
+
+/* An outline (not box-shadow) so the focus ring survives forced-colors mode. */
+.dts-textfield__input:focus-visible {
+  outline: var(--component-textfield-focus-ring-width) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: var(--component-textfield-focus-ring-offset);
+}
+
+.dts-textfield__input:disabled {
+  border-color: var(--component-textfield-border-disabled);
+  background-color: var(--component-textfield-bg-disabled);
+  color: var(--component-textfield-text-disabled);
+  cursor: not-allowed;
+}
+
+.dts-textfield__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--component-textfield-gap);
+  margin: 0;
+  color: var(--component-textfield-error-text);
+  font-size: var(--component-textfield-description-size);
+}
+
+.dts-textfield__icon {
+  flex: none;
+  width: var(--component-textfield-icon-size);
+  height: var(--component-textfield-icon-size);
+}
+
+/* Forced colors drops our colors: keep the border and the disabled state visible with system colors. */
+@media (forced-colors: active) {
+  .dts-textfield__input {
+    border-color: FieldText;
+  }
+
+  .dts-textfield__input[aria-invalid='true'] {
+    border-color: Highlight;
+  }
+
+  .dts-textfield__input:disabled {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

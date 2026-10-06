@@ -1,0 +1,18 @@
+/*
+ * Shared utility: hides content visually but keeps it in the accessibility
+ * tree. Used for text that carries meaning for assistive technology, such as
+ * the "Error: " prefix. No colors, so nothing here needs a contrast entry.
+ */
+
+.dts-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

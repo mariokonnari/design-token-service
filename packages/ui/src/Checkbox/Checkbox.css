@@ -1,0 +1,77 @@
+/*
+ * Checkbox styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ * The box and check mark are drawn by the browser; accent-color tints the
+ * checked state. The label sits on the page surface.
+ */
+
+.dts-checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--component-checkbox-gap);
+  font-family: var(--component-checkbox-font-family);
+  font-size: var(--component-checkbox-font-size);
+}
+
+/* The whole label is the click target and is at least the minimum target size. */
+.dts-checkbox__label {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--component-checkbox-gap);
+  min-width: var(--component-checkbox-min-size);
+  min-height: var(--component-checkbox-min-size);
+  color: var(--component-checkbox-label-text);
+  cursor: pointer;
+}
+
+.dts-checkbox__input {
+  flex: none;
+  width: var(--component-checkbox-box-size);
+  height: var(--component-checkbox-box-size);
+  margin: 0;
+  accent-color: var(--component-checkbox-accent);
+  cursor: pointer;
+}
+
+/* An outline (not box-shadow) so the focus ring survives forced-colors mode. */
+.dts-checkbox__input:focus-visible {
+  outline: var(--component-checkbox-focus-ring-width) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: var(--component-checkbox-focus-ring-offset);
+}
+
+.dts-checkbox__input:disabled {
+  cursor: not-allowed;
+}
+
+.dts-checkbox__label:has(.dts-checkbox__input:disabled) {
+  color: var(--component-checkbox-text-disabled);
+  cursor: not-allowed;
+}
+
+.dts-checkbox__description {
+  margin: 0;
+  margin-inline-start: calc(
+    var(--component-checkbox-box-size) + var(--component-checkbox-gap)
+  );
+  color: var(--component-checkbox-description-text);
+  font-size: var(--component-checkbox-description-size);
+}
+
+/* Forced colors: keep the mark, the focus ring and the disabled state visible with system colors. */
+@media (forced-colors: active) {
+  .dts-checkbox__input {
+    accent-color: Highlight;
+  }
+
+  .dts-checkbox__input:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .dts-checkbox__label:has(.dts-checkbox__input:disabled) {
+    color: GrayText;
+  }
+}

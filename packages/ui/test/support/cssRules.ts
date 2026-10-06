@@ -139,6 +139,100 @@ export function declaredVariables(themesCss: string): Map<string, Set<string>> {
   return themes
 }
 
+const compact = (text: string): string => text.replaceAll(/\s+/g, '')
+
+/** Properties declared inside `@media (forced-colors: active)` blocks. Empty when there is no such block. */
+export function forcedColorsProperties(css: string): string[] {
+  const found: string[] = []
+  csstree.walk(parse(css), {
+    visit: 'Atrule',
+    enter(atrule) {
+      if (
+        atrule.name !== 'media' ||
+        atrule.prelude === null ||
+        !compact(csstree.generate(atrule.prelude)).includes(
+          '(forced-colors:active)',
+        )
+      ) {
+        return
+      }
+      csstree.walk(atrule, {
+        visit: 'Declaration',
+        enter(declaration) {
+          found.push(declaration.property)
+        },
+      })
+    },
+  })
+  return found
+}
+
+/**
+ * Problems with focus rings: a `:focus-visible` rule that uses `box-shadow`
+ * (removed in forced-colors mode), or a stylesheet where no `:focus-visible`
+ * rule draws an `outline`. A rule that only adjusts `outline-color` (for
+ * example inside a forced-colors block) is fine as long as another rule draws
+ * the outline.
+ */
+export function findFocusVisibleProblems(css: string): string[] {
+  const problems: string[] = []
+  let drawsOutline = false
+  let sawFocusVisible = false
+  csstree.walk(parse(css), {
+    visit: 'Rule',
+    enter(rule) {
+      const selector = csstree.generate(rule.prelude)
+      if (!selector.includes(':focus-visible')) return
+      sawFocusVisible = true
+      csstree.walk(rule.block, {
+        visit: 'Declaration',
+        enter(declaration) {
+          if (declaration.property === 'outline') drawsOutline = true
+          if (declaration.property === 'box-shadow') {
+            problems.push(`${selector}: box-shadow`)
+          }
+        },
+      })
+    },
+  })
+  if (sawFocusVisible && !drawsOutline) {
+    problems.push('no :focus-visible rule draws an outline')
+  }
+  return problems
+}
+
+/** True when the CSS uses `transition` but has no `prefers-reduced-motion: reduce` block that sets it. */
+export function transitionWithoutReducedMotion(css: string): boolean {
+  let transitions = false
+  let reduced = false
+  csstree.walk(parse(css), {
+    visit: 'Atrule',
+    enter(atrule) {
+      if (
+        atrule.name === 'media' &&
+        atrule.prelude !== null &&
+        compact(csstree.generate(atrule.prelude)).includes(
+          '(prefers-reduced-motion:reduce)',
+        )
+      ) {
+        csstree.walk(atrule, {
+          visit: 'Declaration',
+          enter(declaration) {
+            if (declaration.property === 'transition') reduced = true
+          },
+        })
+      }
+    },
+  })
+  csstree.walk(parse(css), {
+    visit: 'Declaration',
+    enter(declaration) {
+      if (declaration.property === 'transition') transitions = true
+    },
+  })
+  return transitions && !reduced
+}
+
 export interface UndefinedVariable {
   theme: string
   variable: string

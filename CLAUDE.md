@@ -3,9 +3,9 @@
 A multi-tenant Design Token & Theming service. Teams log in, manage their brand's design tokens (color, spacing, typography), preview them live against an accessible React component library, and export them as CSS variables or JSON.
 
 > Status: scaffolded pnpm monorepo with ESLint + Prettier (import-boundary rules), a built-output API smoke test and GitHub Actions CI. `apps/web` and `apps/api` (`GET /health`) are still placeholders.
-> `packages/ui` now has a foundation (ADR 0008): themes generated from `tokens/*.tokens.json` into the committed `src/themes.generated.css` (`pnpm generate:theme`, drift-checked in CI), `ThemeScope`, an accessible `Button`, tests that enforce the styling rules (no primitives, no raw colors, no `var()` fallbacks, every variable defined in every theme, token contrast), and Storybook with the a11y addon and a theme toggle (`pnpm --filter @dts/ui storybook`).
+> `packages/ui` now has a foundation (ADR 0008): themes generated from `tokens/*.tokens.json` into the committed `src/themes.generated.css` (`pnpm generate:theme`, drift-checked in CI), `ThemeScope`, accessible `Button`, `TextField`, `Checkbox` and `Alert` (ADR 0009), tests that enforce the styling rules (no primitives, no raw colors, no `var()` fallbacks, every variable defined in every theme, forced-colors/focus/reduced-motion structure) and a declarative contrast registry (`test/contrastPairs.ts`, checked for every theme), and Storybook with the a11y addon and a theme toggle (`pnpm --filter @dts/ui storybook`). Built-in text is English-only by default and overridable by props; the library ships no translations.
 > `packages/tokens-core` now has the real token model: `flatten`/`nest`, literal validation, alias `resolve` with cycle detection, and `checkTiers` (ADR 0006), plus the exporters `toCssVariables` (scoped CSS custom properties, collision detection, escaping) and `toResolvedTree` (JSON), and sRGB color/contrast utilities (WCAG 2.x) (ADR 0007).
-> Not built yet: Prisma/PostgreSQL, JWT auth, any API or editor use of the exporters, components beyond `Button`, APCA. The layout below is the **target**; anything listed there beyond the above is still planned.
+> Not built yet: Prisma/PostgreSQL, JWT auth, any API or editor use of the exporters, components beyond `Button`, `TextField`, `Checkbox` and `Alert`, APCA. The layout below is the **target**; anything listed there beyond the above is still planned.
 
 ## Target layout
 
@@ -37,7 +37,7 @@ docs/
 
 The two `ui`/`tokens-core` import boundaries above are enforced by ESLint (`no-restricted-imports`, see ADR 0005). Workspace packages are consumed as TypeScript source (ADR 0003), so `apps/api` bundles them with tsup.
 
-Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md), [0006 token subset and tier rules](docs/decisions/0006-token-subset-and-tier-rules.md), [0007 CSS export and contrast](docs/decisions/0007-css-export-and-contrast.md), [0008 UI styling and theme generation](docs/decisions/0008-ui-styling-and-theme-generation.md).
+Decisions: [0001 monorepo](docs/decisions/0001-monorepo-structure.md), [0002 tokens and theming](docs/decisions/0002-token-model-and-theming.md), [0003 package consumption](docs/decisions/0003-workspace-package-consumption.md), [0004 TypeScript 6 pin](docs/decisions/0004-typescript-6-pin.md), [0005 linting and boundaries](docs/decisions/0005-linting-and-boundaries.md), [0006 token subset and tier rules](docs/decisions/0006-token-subset-and-tier-rules.md), [0007 CSS export and contrast](docs/decisions/0007-css-export-and-contrast.md), [0008 UI styling and theme generation](docs/decisions/0008-ui-styling-and-theme-generation.md), [0009 form controls and alerts](docs/decisions/0009-form-controls-and-alerts.md).
 
 ## Token architecture
 
@@ -71,6 +71,15 @@ Three tiers, as the top-level groups `primitive`, `semantic` and `component`:
 ```
 
 An alias token takes its type from its target. Problems are returned as issues (`{ code, severity, path, message, field?, related? }`), never thrown.
+
+## Adding a component to `packages/ui`
+
+1. Create `src/<Name>/` with `<Name>.tsx`, `<Name>.css`, an `index.ts`, tests (Testing Library, user-event, jest-axe) and stories. Use `ComponentPropsWithRef` and take `ref` as a regular prop. Export it from `src/index.ts`.
+2. In the CSS use only `--semantic-*` and `--component-*` variables: no primitives, no raw colors, no `var()` fallbacks (the scanners in `test/cssRules.test.ts` enforce this for every `src/**/*.css`). Add `@media (forced-colors: active)` and `prefers-reduced-motion` rules where relevant.
+3. Add the component's tokens to `tokens/default.tokens.json` (alias semantic tokens; touch `acme.tokens.json` only if a primitive must differ), then run `pnpm generate:theme` and keep the regenerated `src/themes.generated.css`.
+4. **Add every text/background and non-text/background pair the component renders to `test/contrastPairs.ts`**, with the background the foreground really sits on (labels sit on the page surface, an input's own text on the input background), then fix tokens, not thresholds, if a pair fails.
+   **This step is manual and the tests cannot enforce it.** They check the entries that exist in both themes, and that a component folder with CSS has at least one entry, but nothing notices a pair that was never registered. Review it by hand.
+5. Update this file's status and the relevant ADR.
 
 ## Working agreements
 

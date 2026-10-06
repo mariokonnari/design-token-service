@@ -1,0 +1,101 @@
+/*
+ * Alert styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ * Each variant colors its text on its own background, and its border and icon.
+ * Color is never the only signal: the icon shape and a hidden text prefix also
+ * identify the variant.
+ */
+
+.dts-alert {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--component-alert-gap);
+  padding: var(--component-alert-padding-y) var(--component-alert-padding-x);
+  border: var(--component-alert-border-width) solid;
+  border-radius: var(--component-alert-radius);
+  font-family: var(--component-alert-font-family);
+  font-size: var(--component-alert-font-size);
+}
+
+.dts-alert[data-variant='info'] {
+  border-color: var(--component-alert-info-border);
+  background-color: var(--component-alert-info-bg);
+  color: var(--component-alert-info-text);
+}
+
+.dts-alert[data-variant='success'] {
+  border-color: var(--component-alert-success-border);
+  background-color: var(--component-alert-success-bg);
+  color: var(--component-alert-success-text);
+}
+
+.dts-alert[data-variant='warning'] {
+  border-color: var(--component-alert-warning-border);
+  background-color: var(--component-alert-warning-bg);
+  color: var(--component-alert-warning-text);
+}
+
+.dts-alert[data-variant='danger'] {
+  border-color: var(--component-alert-danger-border);
+  background-color: var(--component-alert-danger-bg);
+  color: var(--component-alert-danger-text);
+}
+
+.dts-alert__icon {
+  display: inline-flex;
+  flex: none;
+  width: var(--component-alert-icon-size);
+  height: var(--component-alert-icon-size);
+}
+
+.dts-alert__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dts-alert[data-variant='info'] .dts-alert__icon {
+  color: var(--component-alert-info-border);
+}
+
+.dts-alert[data-variant='success'] .dts-alert__icon {
+  color: var(--component-alert-success-border);
+}
+
+.dts-alert[data-variant='warning'] .dts-alert__icon {
+  color: var(--component-alert-warning-border);
+}
+
+.dts-alert[data-variant='danger'] .dts-alert__icon {
+  color: var(--component-alert-danger-border);
+}
+
+.dts-alert__body {
+  min-width: 0;
+}
+
+.dts-alert__title {
+  margin: 0;
+  font-weight: var(--component-alert-title-weight);
+}
+
+.dts-alert__content > :first-child {
+  margin-top: 0;
+}
+
+.dts-alert__content > :last-child {
+  margin-bottom: 0;
+}
+
+/* Forced colors drops background colors: keep a visible border and icon with system colors. */
+@media (forced-colors: active) {
+  .dts-alert {
+    border-color: CanvasText;
+  }
+
+  .dts-alert[data-variant] .dts-alert__icon {
+    color: CanvasText;
+  }
+}

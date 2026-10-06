@@ -139,6 +139,12 @@
         }
       },
       "red": {
+        "50": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9961, 0.949, 0.949]
+          }
+        },
         "100": {
           "$value": {
             "colorSpace": "srgb",
@@ -161,6 +167,126 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.7255, 0.1098, 0.1098]
+          }
+        },
+        "900": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.498, 0.1137, 0.1137]
+          }
+        }
+      },
+      "blue": {
+        "50": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9373, 0.9647, 1]
+          }
+        },
+        "100": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.8588, 0.9176, 0.9961]
+          }
+        },
+        "500": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.2314, 0.5098, 0.9647]
+          }
+        },
+        "600": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1451, 0.3882, 0.9216]
+          }
+        },
+        "700": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1137, 0.3059, 0.8471]
+          }
+        },
+        "900": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1176, 0.2275, 0.5412]
+          }
+        }
+      },
+      "green": {
+        "50": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9412, 0.9922, 0.9569]
+          }
+        },
+        "100": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.8627, 0.9882, 0.9059]
+          }
+        },
+        "500": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.1333, 0.7725, 0.3686]
+          }
+        },
+        "600": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0863, 0.6392, 0.2902]
+          }
+        },
+        "700": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0824, 0.502, 0.2392]
+          }
+        },
+        "900": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0784, 0.3255, 0.1765]
+          }
+        }
+      },
+      "amber": {
+        "50": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1, 0.9843, 0.9216]
+          }
+        },
+        "100": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9961, 0.9529, 0.7804]
+          }
+        },
+        "500": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.9608, 0.6196, 0.0431]
+          }
+        },
+        "600": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.851, 0.4667, 0.0235]
+          }
+        },
+        "700": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.7059, 0.3255, 0.0353]
+          }
+        },
+        "900": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4706, 0.2078, 0.0588]
           }
         }
       }
@@ -375,11 +501,58 @@
       "border": {
         "$value": "{primitive.color.neutral.500}"
       },
+      "input-border": {
+        "$value": "{primitive.color.neutral.500}"
+      },
+      "placeholder": {
+        "$value": "{primitive.color.neutral.600}"
+      },
       "focus-ring": {
         "$value": "{primitive.color.brand.600}"
       },
+      "info": {
+        "surface": {
+          "$value": "{primitive.color.blue.50}"
+        },
+        "text": {
+          "$value": "{primitive.color.blue.900}"
+        },
+        "border": {
+          "$value": "{primitive.color.blue.600}"
+        }
+      },
+      "success": {
+        "surface": {
+          "$value": "{primitive.color.green.50}"
+        },
+        "text": {
+          "$value": "{primitive.color.green.900}"
+        },
+        "border": {
+          "$value": "{primitive.color.green.700}"
+        }
+      },
+      "warning": {
+        "surface": {
+          "$value": "{primitive.color.amber.50}"
+        },
+        "text": {
+          "$value": "{primitive.color.amber.900}"
+        },
+        "border": {
+          "$value": "{primitive.color.amber.700}"
+        }
+      },
       "danger": {
-        "$value": "{primitive.color.red.600}"
+        "surface": {
+          "$value": "{primitive.color.red.50}"
+        },
+        "text": {
+          "$value": "{primitive.color.red.900}"
+        },
+        "border": {
+          "$value": "{primitive.color.red.700}"
+        }
       },
       "action": {
         "primary": {
@@ -405,6 +578,9 @@
       },
       "gap-sm": {
         "$value": "{primitive.space.2}"
+      },
+      "gap-md": {
+        "$value": "{primitive.space.3}"
       }
     },
     "radius": {
@@ -439,6 +615,9 @@
       "weight": {
         "control": {
           "$value": "{primitive.font.weight.medium}"
+        },
+        "strong": {
+          "$value": "{primitive.font.weight.semibold}"
         }
       }
     }
@@ -528,6 +707,214 @@
           "value": 2,
           "unit": "px"
         }
+      }
+    },
+    "textfield": {
+      "bg": {
+        "$value": "{semantic.color.surface}"
+      },
+      "text": {
+        "$value": "{semantic.color.text}"
+      },
+      "placeholder": {
+        "$value": "{semantic.color.placeholder}"
+      },
+      "border": {
+        "$value": "{semantic.color.input-border}"
+      },
+      "border-invalid": {
+        "$value": "{semantic.color.danger.border}"
+      },
+      "bg-disabled": {
+        "$value": "{semantic.color.surface-disabled}"
+      },
+      "text-disabled": {
+        "$value": "{semantic.color.text-disabled}"
+      },
+      "border-disabled": {
+        "$value": "{semantic.color.surface-disabled}"
+      },
+      "label-text": {
+        "$value": "{semantic.color.text}"
+      },
+      "description-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "required-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "error-text": {
+        "$value": "{semantic.color.danger.text}"
+      },
+      "radius": {
+        "$value": "{semantic.radius.control}"
+      },
+      "border-width": {
+        "$value": "{semantic.border.width.control}"
+      },
+      "padding-x": {
+        "$value": "{semantic.space.inset-sm}"
+      },
+      "padding-y": {
+        "$value": "{semantic.space.inset-xs}"
+      },
+      "min-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 36,
+          "unit": "px"
+        }
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-sm}"
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "description-size": {
+        "$value": "{semantic.font.size.sm}"
+      },
+      "label-weight": {
+        "$value": "{semantic.font.weight.control}"
+      },
+      "icon-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16,
+          "unit": "px"
+        }
+      },
+      "focus-ring-width": {
+        "$value": "{semantic.border.width.focus}"
+      },
+      "focus-ring-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "px"
+        }
+      }
+    },
+    "checkbox": {
+      "accent": {
+        "$value": "{semantic.color.action.primary}"
+      },
+      "box-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 18,
+          "unit": "px"
+        }
+      },
+      "min-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 28,
+          "unit": "px"
+        }
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-sm}"
+      },
+      "label-text": {
+        "$value": "{semantic.color.text}"
+      },
+      "description-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "text-disabled": {
+        "$value": "{semantic.color.text-disabled}"
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "description-size": {
+        "$value": "{semantic.font.size.sm}"
+      },
+      "focus-ring-width": {
+        "$value": "{semantic.border.width.focus}"
+      },
+      "focus-ring-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "px"
+        }
+      }
+    },
+    "alert": {
+      "padding-x": {
+        "$value": "{semantic.space.inset-md}"
+      },
+      "padding-y": {
+        "$value": "{semantic.space.gap-md}"
+      },
+      "radius": {
+        "$value": "{semantic.radius.control}"
+      },
+      "border-width": {
+        "$value": "{semantic.border.width.control}"
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-md}"
+      },
+      "icon-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 20,
+          "unit": "px"
+        }
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "title-weight": {
+        "$value": "{semantic.font.weight.strong}"
+      },
+      "info-bg": {
+        "$value": "{semantic.color.info.surface}"
+      },
+      "info-text": {
+        "$value": "{semantic.color.info.text}"
+      },
+      "info-border": {
+        "$value": "{semantic.color.info.border}"
+      },
+      "success-bg": {
+        "$value": "{semantic.color.success.surface}"
+      },
+      "success-text": {
+        "$value": "{semantic.color.success.text}"
+      },
+      "success-border": {
+        "$value": "{semantic.color.success.border}"
+      },
+      "warning-bg": {
+        "$value": "{semantic.color.warning.surface}"
+      },
+      "warning-text": {
+        "$value": "{semantic.color.warning.text}"
+      },
+      "warning-border": {
+        "$value": "{semantic.color.warning.border}"
+      },
+      "danger-bg": {
+        "$value": "{semantic.color.danger.surface}"
+      },
+      "danger-text": {
+        "$value": "{semantic.color.danger.text}"
+      },
+      "danger-border": {
+        "$value": "{semantic.color.danger.border}"
       }
     }
   }
