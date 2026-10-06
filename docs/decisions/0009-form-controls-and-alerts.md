@@ -50,7 +50,7 @@ A `dts-visually-hidden` utility class (no colors) is shared by `TextField` and `
 
 ### Forced colors, focus and motion
 
-`TextField`, `Checkbox` and `Alert` (like `Button`) have `@media (forced-colors: active)` rules that keep a border, the mark or the focus ring visible with system color keywords, because background colors are dropped there. Focus rings are `outline` on `:focus-visible`, never `box-shadow`. Tests check this **as CSS text only**: that each stylesheet has a forced-colors block, that text fields and alerts set a border color in it, that no focus rule uses `box-shadow`, and that a transition is switched off for reduced motion. Nobody has rendered it in a browser with forced colors on.
+`TextField`, `Checkbox` and `Alert` (like `Button`) have `@media (forced-colors: active)` rules that keep a border, the mark or the focus ring visible with system color keywords, because background colors are dropped there. Focus rings are `outline` on `:focus-visible`, never `box-shadow`. Tests check this **as CSS text only**: that each stylesheet has a forced-colors block, that text fields and alerts set a border color in it, that no focus rule uses `box-shadow`, and that a transition is switched off for reduced motion. Nobody had rendered it in a browser with forced colors on when this was written; [ADR 0010](0010-real-browser-testing.md) adds real-Chromium tests and records what they can and cannot prove.
 
 ## Alternatives considered
 

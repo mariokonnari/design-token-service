@@ -9,8 +9,10 @@
     "src",
     "test",
     "scripts",
+    "e2e",
     ".storybook/*.ts",
     ".storybook/*.tsx",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "playwright.config.ts"
   ]
 }

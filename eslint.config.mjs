@@ -21,6 +21,8 @@ export default defineConfig([
     '**/coverage/**',
     '**/node_modules/**',
     '**/storybook-static/**',
+    '**/playwright-report/**',
+    '**/test-results/**',
   ]),
 
   js.configs.recommended,
@@ -56,6 +58,12 @@ export default defineConfig([
       '**/*.config.ts',
     ],
     languageOptions: { globals: globals.node },
+  },
+
+  // Playwright specs run in Node (page.evaluate callbacks still use DOM types).
+  {
+    files: ['packages/ui/e2e/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
 
   // Boundary 1: packages/ui source must not import tokens-core. Build scripts

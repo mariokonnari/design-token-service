@@ -10,3 +10,5 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 storybook-static/
+playwright-report/
+test-results/
