@@ -24,6 +24,20 @@ const EXPECTED: Record<string, string[]> = {
     'All',
   ],
   Alert: ['Info', 'Success', 'Warning', 'Danger', 'WithTitle', 'All'],
+  Dialog: [
+    'ClosedWithTrigger',
+    'OpenByDefault',
+    'WithDescription',
+    'LongContent',
+    'CustomCloseLabel',
+  ],
+  Tabs: [
+    'Default',
+    'Vertical',
+    'ManualActivation',
+    'DisabledTab',
+    'Controlled',
+  ],
 }
 
 describe.each(Object.entries(EXPECTED))('%s stories', (name, stories) => {

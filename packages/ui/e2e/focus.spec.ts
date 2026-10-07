@@ -84,4 +84,23 @@ for (const theme of THEMES) {
       }
     })
   }
+
+  // Tabs use a roving tabindex, so Tab only reaches the selected tab; the
+  // others are reached with the arrow keys and then the panel with Tab.
+  test(`Tabs: the ring shows on the selected tab, on the next tab after an arrow key, and on the panel [${theme}]`, async ({
+    page,
+  }) => {
+    await openStory(page, 'components-tabs--default', theme)
+    const selected = page.locator('[role="tab"][aria-selected="true"]')
+    await tabTo(page, selected)
+    await expectFocusRing(selected, 'selected Tab')
+
+    await page.keyboard.press('ArrowRight')
+    const next = page.getByRole('tab', { name: 'Security' })
+    await expectFocusRing(next, 'Tab reached by ArrowRight')
+
+    await page.keyboard.press('Tab')
+    const panel = page.locator('[role="tabpanel"]:not([hidden])')
+    await expectFocusRing(panel, 'TabPanel')
+  })
 }

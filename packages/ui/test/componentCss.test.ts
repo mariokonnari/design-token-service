@@ -32,6 +32,8 @@ describe('component stylesheets', () => {
       'Alert/Alert.css',
       'Button/Button.css',
       'Checkbox/Checkbox.css',
+      'Dialog/Dialog.css',
+      'Tabs/Tabs.css',
       'TextField/TextField.css',
     ])
   })
@@ -56,16 +58,19 @@ describe('forced-colors keeps borders visible where background colors are droppe
     componentCss.find((entry) => entry.file.replaceAll('\\', '/') === name)
       ?.css ?? ''
 
-  it.each(['TextField/TextField.css', 'Alert/Alert.css', 'Button/Button.css'])(
-    '%s sets a border color with a system color keyword',
-    (name) => {
-      const properties = forcedColorsProperties(byName(name))
-      expect(
-        properties.some((property) => property.startsWith('border')),
-        `${name}: ${properties.join(', ')}`,
-      ).toBe(true)
-    },
-  )
+  it.each([
+    'TextField/TextField.css',
+    'Alert/Alert.css',
+    'Button/Button.css',
+    'Dialog/Dialog.css',
+    'Tabs/Tabs.css',
+  ])('%s sets a border color with a system color keyword', (name) => {
+    const properties = forcedColorsProperties(byName(name))
+    expect(
+      properties.some((property) => property.startsWith('border')),
+      `${name}: ${properties.join(', ')}`,
+    ).toBe(true)
+  })
 
   it('Checkbox keeps its mark and focus ring in forced colors', () => {
     const properties = forcedColorsProperties(byName('Checkbox/Checkbox.css'))

@@ -119,7 +119,7 @@ describe.each(builds)('contrast in the $slug theme', ({ slug, resolved }) => {
 
   it('keeps every control minimum size at or above 24px', () => {
     expect(minSizeProblems(resolved)).toEqual([])
-    expect(MIN_SIZE_TOKENS.length).toBeGreaterThanOrEqual(4)
+    expect(MIN_SIZE_TOKENS.length).toBeGreaterThanOrEqual(6)
   })
 })
 

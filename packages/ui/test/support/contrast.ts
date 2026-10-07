@@ -85,6 +85,8 @@ export const MIN_SIZE_TOKENS = [
   'component.button.min-size-md',
   'component.textfield.min-size',
   'component.checkbox.min-size',
+  'component.tabs.min-size',
+  'component.dialog.close-size',
 ] as const
 
 /** Minimum-size tokens that are missing, not px, or fall under the target-size minimum. */

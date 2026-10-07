@@ -19,7 +19,14 @@ import {
  *   behaviour in Chromium; they are kept for engines that behave differently.
  */
 
-const COMPONENTS = ['Alert', 'Button', 'Checkbox', 'TextField']
+const COMPONENTS = [
+  'Alert',
+  'Button',
+  'Checkbox',
+  'Dialog',
+  'Tabs',
+  'TextField',
+]
 
 type SystemKeyword = 'CanvasText' | 'ButtonText' | 'Highlight' | 'GrayText'
 
@@ -199,6 +206,63 @@ for (const component of COMPONENTS) {
             }
           }
         }
+
+        if (component === 'Dialog' && (await has('dialog[open]'))) {
+          const open = await computed(page, 'dialog[open].dts-dialog')
+          const canvasText = await systemColor(page, 'CanvasText')
+          expect(open.length, 'an open dialog').toBeGreaterThan(0)
+          for (const d of open) {
+            expect(d.borderStyle, 'dialog border-style').not.toBe('none')
+            expect(d.borderWidth, 'dialog border-width').toBeGreaterThan(0)
+            expect(d.borderColor, 'dialog border is CanvasText').toBe(
+              canvasText,
+            )
+          }
+        }
+
+        if (component === 'Tabs') {
+          // The indicator is a border on the edge facing the panel.
+          const look = (selector: string) =>
+            page
+              .locator(selector)
+              .first()
+              .evaluate((el) => {
+                const s = getComputedStyle(el)
+                const horizontal =
+                  el.getAttribute('data-orientation') !== 'vertical'
+                return {
+                  color: horizontal
+                    ? s.borderBottomColor
+                    : s.borderInlineStartColor,
+                  width: parseFloat(
+                    horizontal ? s.borderBottomWidth : s.borderInlineStartWidth,
+                  ),
+                  style: horizontal
+                    ? s.borderBottomStyle
+                    : s.borderInlineStartStyle,
+                  weight: Number(s.fontWeight),
+                }
+              })
+          const selected = await look('.dts-tabs__tab[aria-selected=true]')
+          const other = await look('.dts-tabs__tab[aria-selected=false]')
+          expect(selected.style, 'indicator style').not.toBe('none')
+          expect(selected.width, 'indicator width').toBeGreaterThan(0)
+          expect(selected.color, 'indicator is Highlight').toBe(
+            await systemColor(page, 'Highlight'),
+          )
+          expect(selected.color, 'indicator differs from unselected').not.toBe(
+            other.color,
+          )
+          expect(selected.weight, 'selected is heavier').toBeGreaterThan(
+            other.weight,
+          )
+          if (await has('.dts-tabs__tab:disabled')) {
+            const gray = await systemColor(page, 'GrayText')
+            for (const t of await computed(page, '.dts-tabs__tab:disabled')) {
+              expect(t.color, 'disabled Tab text').toBe(gray)
+            }
+          }
+        }
       })
     }
   }
@@ -208,6 +272,7 @@ const FOCUS_TARGETS = [
   ['components-button--primary', '.dts-button'],
   ['components-textfield--default', '.dts-textfield__input'],
   ['components-checkbox--default', '.dts-checkbox__input'],
+  ['components-tabs--default', '.dts-tabs__tab[aria-selected=true]'],
 ] as const
 
 for (const [storyId, selector] of FOCUS_TARGETS) {

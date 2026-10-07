@@ -1,0 +1,88 @@
+/*
+ * Tabs styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ * The selected tab is shown by an indicator line AND a heavier font weight,
+ * never by color alone. There are no transitions.
+ */
+
+.dts-tabs {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--component-tabs-font-family);
+  font-size: var(--component-tabs-font-size);
+}
+
+.dts-tabs[data-orientation='vertical'] {
+  flex-direction: row;
+}
+
+.dts-tabs__list {
+  display: flex;
+  gap: var(--component-tabs-gap);
+}
+
+.dts-tabs__list[data-orientation='vertical'] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dts-tabs__tab {
+  box-sizing: border-box;
+  min-width: var(--component-tabs-min-size);
+  min-height: var(--component-tabs-min-size);
+  padding: var(--component-tabs-padding-y) var(--component-tabs-padding-x);
+  border: 0;
+  border-bottom: var(--component-tabs-indicator-width) solid transparent;
+  background: transparent;
+  color: var(--component-tabs-text);
+  font: inherit;
+  font-weight: var(--component-tabs-font-weight);
+  cursor: pointer;
+}
+
+.dts-tabs__tab[data-orientation='vertical'] {
+  border-bottom: 0;
+  border-inline-start: var(--component-tabs-indicator-width) solid transparent;
+  text-align: start;
+}
+
+.dts-tabs__tab[aria-selected='true'] {
+  border-color: var(--component-tabs-indicator);
+  color: var(--component-tabs-text-selected);
+  font-weight: var(--component-tabs-font-weight-selected);
+}
+
+.dts-tabs__tab:disabled {
+  color: var(--component-tabs-text-disabled);
+  cursor: not-allowed;
+}
+
+/* An outline (not box-shadow) so the focus ring survives forced-colors mode. */
+.dts-tabs__tab:focus-visible,
+.dts-tabs__panel:focus-visible {
+  outline: var(--component-tabs-focus-ring-width) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: var(--component-tabs-focus-ring-offset);
+}
+
+.dts-tabs__panel {
+  padding: var(--component-tabs-panel-padding);
+}
+
+/* `display` rules must never override the hidden attribute. */
+.dts-tabs__panel[hidden] {
+  display: none;
+}
+
+/* Forced colors drops our colors: keep the indicator and the disabled state visible with system colors. */
+@media (forced-colors: active) {
+  .dts-tabs__tab[aria-selected='true'] {
+    border-color: Highlight;
+  }
+
+  .dts-tabs__tab:disabled {
+    color: GrayText;
+  }
+}

@@ -229,6 +229,62 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     SURFACE,
   ),
 
+  // Tabs: the tab labels sit on the page surface. The selected indicator is a
+  // non-text part. Selection is also shown by font weight, never color alone.
+  text('Tabs', 'tab text on surface', 'component.tabs.text', SURFACE),
+  text(
+    'Tabs',
+    'selected tab text on surface',
+    'component.tabs.text-selected',
+    SURFACE,
+  ),
+  nonText(
+    'Tabs',
+    'selected indicator on surface',
+    'component.tabs.indicator',
+    SURFACE,
+  ),
+  nonText(
+    'Tabs',
+    'focus-ring on surface',
+    'semantic.color.focus-ring',
+    SURFACE,
+  ),
+
+  // Dialog: its text sits on the dialog surface; its border is the edge
+  // against the page surface. The backdrop overlay is translucent and is not
+  // registered (the registry needs opaque colors; test/overlay.test.ts checks it).
+  text(
+    'Dialog',
+    'text on dialog surface',
+    'component.dialog.text',
+    'component.dialog.bg',
+  ),
+  text(
+    'Dialog',
+    'description on dialog surface',
+    'component.dialog.description-text',
+    'component.dialog.bg',
+  ),
+  nonText(
+    'Dialog',
+    'border on page surface',
+    'component.dialog.border',
+    SURFACE,
+  ),
+  nonText(
+    'Dialog',
+    'close icon on dialog surface',
+    'component.dialog.close-icon',
+    'component.dialog.bg',
+  ),
+  nonText(
+    'Dialog',
+    'focus-ring on dialog surface',
+    'semantic.color.focus-ring',
+    'component.dialog.bg',
+  ),
+
   // Alert: text on its own background; the border and icon on that background
   // and, because the border is also the alert's edge, on the page surface.
   ...ROLES.flatMap((role) => [

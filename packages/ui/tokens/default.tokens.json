@@ -510,6 +510,14 @@
       "focus-ring": {
         "$value": "{primitive.color.brand.600}"
       },
+      "overlay": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [0.102, 0.1137, 0.1294],
+          "alpha": 0.5
+        }
+      },
       "info": {
         "surface": {
           "$value": "{primitive.color.blue.50}"
@@ -915,6 +923,146 @@
       },
       "danger-border": {
         "$value": "{semantic.color.danger.border}"
+      }
+    },
+    "tabs": {
+      "text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "text-selected": {
+        "$value": "{semantic.color.text}"
+      },
+      "text-disabled": {
+        "$value": "{semantic.color.text-disabled}"
+      },
+      "indicator": {
+        "$value": "{semantic.color.action.primary}"
+      },
+      "indicator-width": {
+        "$type": "dimension",
+        "$value": {
+          "value": 3,
+          "unit": "px"
+        }
+      },
+      "font-weight": {
+        "$value": "{semantic.font.weight.control}"
+      },
+      "font-weight-selected": {
+        "$value": "{semantic.font.weight.strong}"
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "padding-x": {
+        "$value": "{semantic.space.inset-md}"
+      },
+      "padding-y": {
+        "$value": "{semantic.space.inset-sm}"
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-sm}"
+      },
+      "min-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 28,
+          "unit": "px"
+        }
+      },
+      "panel-padding": {
+        "$value": "{semantic.space.inset-md}"
+      },
+      "focus-ring-width": {
+        "$value": "{semantic.border.width.focus}"
+      },
+      "focus-ring-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "px"
+        }
+      }
+    },
+    "dialog": {
+      "bg": {
+        "$value": "{semantic.color.surface}"
+      },
+      "text": {
+        "$value": "{semantic.color.text}"
+      },
+      "description-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "border": {
+        "$value": "{semantic.color.border}"
+      },
+      "border-width": {
+        "$value": "{semantic.border.width.control}"
+      },
+      "radius": {
+        "$value": "{semantic.radius.control}"
+      },
+      "padding": {
+        "$value": "{semantic.space.inset-md}"
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-md}"
+      },
+      "max-width": {
+        "$type": "dimension",
+        "$value": {
+          "value": 32,
+          "unit": "rem"
+        }
+      },
+      "backdrop": {
+        "$value": "{semantic.color.overlay}"
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "description-size": {
+        "$value": "{semantic.font.size.sm}"
+      },
+      "title-weight": {
+        "$value": "{semantic.font.weight.strong}"
+      },
+      "close-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 32,
+          "unit": "px"
+        }
+      },
+      "close-icon": {
+        "$value": "{semantic.color.text}"
+      },
+      "close-icon-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16,
+          "unit": "px"
+        }
+      },
+      "close-radius": {
+        "$value": "{semantic.radius.control}"
+      },
+      "focus-ring-width": {
+        "$value": "{semantic.border.width.focus}"
+      },
+      "focus-ring-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "px"
+        }
       }
     }
   }

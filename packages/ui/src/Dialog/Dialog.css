@@ -1,0 +1,110 @@
+/*
+ * Dialog styles. Rules (enforced by tests in packages/ui/test):
+ * - only semantic and component variables, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every generated theme.
+ * The dialog element has NO padding: the inner wrapper has it, so a pointer
+ * event whose target is the dialog element itself is on the ::backdrop. There
+ * are no animations in v1. Scrolling happens inside the inner wrapper.
+ */
+
+.dts-dialog {
+  box-sizing: border-box;
+  width: min(var(--component-dialog-max-width), calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: var(--component-dialog-border-width) solid
+    var(--component-dialog-border);
+  border-radius: var(--component-dialog-radius);
+  background-color: var(--component-dialog-bg);
+  color: var(--component-dialog-text);
+  font-family: var(--component-dialog-font-family);
+  font-size: var(--component-dialog-font-size);
+  overflow: hidden;
+}
+
+/* display only while open: a rule on .dts-dialog would show a closed dialog. */
+.dts-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dts-dialog::backdrop {
+  background-color: var(--component-dialog-backdrop);
+}
+
+.dts-dialog__inner {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--component-dialog-gap);
+  min-height: 0;
+  padding: var(--component-dialog-padding);
+  overflow: auto;
+}
+
+.dts-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--component-dialog-gap);
+}
+
+.dts-dialog__title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: var(--component-dialog-title-weight);
+}
+
+.dts-dialog__description {
+  margin: 0;
+  color: var(--component-dialog-description-text);
+  font-size: var(--component-dialog-description-size);
+}
+
+.dts-dialog__body > :first-child {
+  margin-top: 0;
+}
+
+.dts-dialog__body > :last-child {
+  margin-bottom: 0;
+}
+
+.dts-dialog__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--component-dialog-close-size);
+  height: var(--component-dialog-close-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--component-dialog-close-radius);
+  background: transparent;
+  color: var(--component-dialog-close-icon);
+  cursor: pointer;
+}
+
+.dts-dialog__close-icon {
+  width: var(--component-dialog-close-icon-size);
+  height: var(--component-dialog-close-icon-size);
+}
+
+/* An outline (not box-shadow) so the focus ring survives forced-colors mode. */
+.dts-dialog__close:focus-visible {
+  outline: var(--component-dialog-focus-ring-width) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: var(--component-dialog-focus-ring-offset);
+}
+
+/* Forced colors drops our colors: keep the dialog's edge and the icon visible with system colors. */
+@media (forced-colors: active) {
+  .dts-dialog {
+    border-color: CanvasText;
+  }
+
+  .dts-dialog__close {
+    color: ButtonText;
+  }
+}
