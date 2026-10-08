@@ -1,6 +1,9 @@
 // Smoke test for the BUILT API: run after `pnpm build`.
 // Starts `node apps/api/dist/index.js` on a free port, polls GET /health until
 // it returns 200, asserts the body, and always stops the process.
+// It runs WITHOUT a database and without an env file: the required variables get
+// dummy values (never inherited, so the smoke test cannot touch a real database),
+// and GET /ready must answer 503 because nothing is listening at the dummy URL.
 // Cross-platform: no shell, no signals beyond child.kill().
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -12,6 +15,12 @@ const entry = resolve(
   fileURLToPath(new URL('.', import.meta.url)),
   '../apps/api/dist/index.js',
 )
+// Dummy configuration. Port 1 on localhost has no listener, so /ready is 503.
+const dummyEnv = {
+  NODE_ENV: 'production',
+  DATABASE_URL: 'postgresql://dummy:dummy@127.0.0.1:1/dummy',
+  SESSION_SECRET: 'smoke-test-secret-'.padEnd(48, 'x'),
+}
 const timeoutMs = 15_000
 const pollIntervalMs = 200
 
@@ -42,7 +51,7 @@ async function main() {
 
   const port = await getFreePort()
   const child = spawn(process.execPath, [entry], {
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, ...dummyEnv, PORT: String(port) },
     stdio: ['ignore', 'inherit', 'inherit'],
   })
 
@@ -71,8 +80,21 @@ async function main() {
           if (JSON.stringify(body) !== JSON.stringify({ status: 'ok' })) {
             throw new Error(`Unexpected /health body: ${JSON.stringify(body)}`)
           }
+          // Readiness must fail closed (503, no details) with no database.
+          const readyUrl = `http://127.0.0.1:${port}/ready`
+          const ready = await fetch(readyUrl)
+          const readyBody = await ready.json()
+          if (
+            ready.status !== 503 ||
+            JSON.stringify(readyBody) !==
+              JSON.stringify({ status: 'unavailable' })
+          ) {
+            throw new Error(
+              `Unexpected /ready: ${ready.status} ${JSON.stringify(readyBody)} (expected 503 {"status":"unavailable"} with no database)`,
+            )
+          }
           console.log(
-            `smoke:api OK - GET ${url} -> 200 ${JSON.stringify(body)}`,
+            `smoke:api OK - GET ${url} -> 200 ${JSON.stringify(body)}; GET ${readyUrl} -> 503 ${JSON.stringify(readyBody)} (no database)`,
           )
           return
         }

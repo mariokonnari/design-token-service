@@ -16,6 +16,14 @@
     "format:check": "prettier --check .",
     "test:e2e": "pnpm --filter @dts/ui test:e2e",
     "generate:theme": "pnpm --filter @dts/ui generate:theme",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:migrate:dev": "pnpm --filter api db:migrate:dev",
+    "db:studio": "pnpm --filter api db:studio",
+    "db:drift": "pnpm --filter api db:drift",
     "smoke:api": "node scripts/smoke-api.mjs"
   },
   "devDependencies": {

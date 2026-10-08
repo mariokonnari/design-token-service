@@ -4,3 +4,7 @@ packages:
 
 allowBuilds:
   esbuild: false
+  # Prisma's install scripts are NOT run (ADR 0012): the CLI downloads the schema
+  # engine it needs on first use, so these are explicitly ignored, not approved.
+  '@prisma/engines': false
+  prisma: false

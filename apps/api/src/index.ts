@@ -1,15 +1,30 @@
 import { cssVarName } from '@dts/tokens-core'
-import express from 'express'
+import { createApp } from './app'
+import { EnvError, parseEnv } from './config/env'
+import { createReadinessCheck } from './db/ready'
 
-const app = express()
-const port = Number(process.env.PORT ?? 3000)
+let env: ReturnType<typeof parseEnv>
+try {
+  env = parseEnv()
+} catch (error) {
+  console.error(error instanceof EnvError ? error.message : error)
+  process.exit(1)
+}
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' })
-})
+// No connection is opened here: the readiness pool is created on the first /ready.
+const readiness = createReadinessCheck(env.DATABASE_URL)
+const app = createApp({ checkReady: readiness.check })
 
-app.listen(port, () => {
+const server = app.listen(env.PORT, () => {
   console.log(
-    `api listening on :${port} (tokens-core: ${cssVarName('color.blue.500')})`,
+    `api listening on :${env.PORT} [${env.NODE_ENV}] (tokens-core: ${cssVarName('color.blue.500')})`,
   )
 })
+
+function shutdown() {
+  server.close(() => {
+    void readiness.close().finally(() => process.exit(0))
+  })
+}
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)

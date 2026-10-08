@@ -12,6 +12,29 @@ jobs:
     # Pinned: ubuntu-latest starts migrating to Ubuntu 26.04 on 2026-10-19 (rollout completes 2026-11-19), see actions/runner-images#14748.
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+
+    # A real Postgres for the API tests (ADR 0012). The major matches local
+    # development (docker-compose.yml) and Supabase. The database name must end in
+    # _test: the test guard refuses anything else. These throwaway credentials only
+    # exist inside this job.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dts_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dts_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dts_test
+
     steps:
       - uses: actions/checkout@v7
 
@@ -23,7 +46,13 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # `postinstall` generates the Prisma client (it needs no database).
       - run: pnpm install --frozen-lockfile
+
+      # Apply the committed migrations to the empty test database.
+      - name: Apply migrations (prisma migrate deploy)
+        run: pnpm db:migrate
+
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
@@ -37,6 +66,11 @@ jobs:
         run: |
           git ls-files --error-unmatch packages/ui/src/themes.generated.css
           git diff --exit-code -- packages/ui/src/themes.generated.css
+
+      # The committed migrations must produce exactly schema.prisma (ADR 0012).
+      # It cannot see the hand-written CHECK constraints: the DB tests guard those.
+      - name: Migrations match schema.prisma (no drift)
+        run: pnpm db:drift
 
       - run: pnpm --filter @dts/ui build-storybook
 

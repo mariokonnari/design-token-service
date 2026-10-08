@@ -6,3 +6,4 @@ coverage
 storybook-static
 playwright-report
 test-results
+apps/api/src/generated
