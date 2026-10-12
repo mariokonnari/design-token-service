@@ -28,7 +28,21 @@ describe('parseEnv: valid input and defaults', () => {
       PORT: 3000,
       SIGNUP_ENABLED: true,
       ALLOWED_ORIGINS: [],
+      TRUST_PROXY: 0,
     })
+  })
+
+  it.each([
+    ['0', 0],
+    ['1', 1],
+    ['2', 2],
+    ['10', 10],
+  ])('parses TRUST_PROXY=%s as the hop count %i', (TRUST_PROXY, expected) => {
+    expect(parseEnv({ ...valid, TRUST_PROXY }).TRUST_PROXY).toBe(expected)
+  })
+
+  it('treats a blank TRUST_PROXY as the default 0', () => {
+    expect(parseEnv({ ...valid, TRUST_PROXY: '' }).TRUST_PROXY).toBe(0)
   })
 
   it('parses every variable', () => {
@@ -120,6 +134,13 @@ describe('parseEnv: failing closed', () => {
     'rejects PORT=%s',
     (PORT) => {
       expect(names(failure({ ...valid, PORT }))).toEqual(['PORT'])
+    },
+  )
+
+  it.each(['-1', '11', '1.5', 'true', 'abc', '0x1', ' 1', '1e1'])(
+    'rejects TRUST_PROXY=%s (a whole number of hops from 0 to 10)',
+    (TRUST_PROXY) => {
+      expect(names(failure({ ...valid, TRUST_PROXY }))).toEqual(['TRUST_PROXY'])
     },
   )
 

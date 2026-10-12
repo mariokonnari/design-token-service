@@ -157,6 +157,34 @@ export default defineConfig([
       'no-restricted-imports': ['error', { patterns: [apiIssueScopePattern] }],
     },
   },
+  // The route table is the single source of truth (ADR 0013): routes are
+  // registered ONLY by src/routes/mount.ts (from the table) and the middleware
+  // stack only by src/app.ts. Anything else would be invisible to the guard test.
+  {
+    files: ['apps/api/src/**/*.ts'],
+    ignores: [
+      'apps/api/src/app.ts',
+      'apps/api/src/routes/mount.ts',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.object.name=/^(app|router)$/][callee.property.name=/^(get|post|put|patch|delete|all|route|use|options|head|param)$/]",
+          message:
+            'Do not register routes or middleware here. Add the route to src/routes/table.ts (mounted by src/routes/mount.ts) or the middleware to src/app.ts (ADR 0013).',
+        },
+        {
+          selector:
+            "CallExpression[callee.name='Router'], CallExpression[callee.property.name='Router']",
+          message:
+            'Nested routers are not allowed: the route guard cannot verify them. Register full paths in src/routes/table.ts (ADR 0013).',
+        },
+      ],
+    },
+  },
   {
     files: ['apps/api/src/auth/**/*.ts'],
     rules: {

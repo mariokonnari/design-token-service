@@ -1,7 +1,7 @@
 import request from 'supertest'
 import { describe, expect, it, vi } from 'vitest'
-import { createApp } from '../src/app'
 import { createReadinessCheck } from '../src/db/ready'
+import { appWith } from './support/http'
 import { assertTestDatabase } from './support/guard'
 
 // Minimal HTTP checks for the two probe endpoints (supertest, no real port).
@@ -9,21 +9,23 @@ import { assertTestDatabase } from './support/guard'
 describe('GET /health', () => {
   it('answers 200 {"status":"ok"} and never touches the database', async () => {
     const checkReady = vi.fn().mockResolvedValue(false)
-    const response = await request(createApp({ checkReady })).get('/health')
+    const { app } = appWith([], { checkReady })
+    const response = await request(app).get('/health')
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ status: 'ok' })
     expect(checkReady).not.toHaveBeenCalled()
   })
 
   it('stays 200 when the database check would throw or hang', async () => {
-    const app = createApp({ checkReady: () => new Promise(() => undefined) })
+    const { app } = appWith([], {
+      checkReady: () => new Promise(() => undefined),
+    })
     expect((await request(app).get('/health')).status).toBe(200)
   })
 
   it('does not advertise the framework', async () => {
-    const response = await request(
-      createApp({ checkReady: () => Promise.resolve(true) }),
-    ).get('/health')
+    const { app } = appWith()
+    const response = await request(app).get('/health')
     expect(response.headers['x-powered-by']).toBeUndefined()
   })
 })
@@ -34,9 +36,8 @@ describe('GET /ready', () => {
       assertTestDatabase(process.env['DATABASE_URL']),
     )
     try {
-      const response = await request(
-        createApp({ checkReady: readiness.check }),
-      ).get('/ready')
+      const { app } = appWith([], { checkReady: readiness.check })
+      const response = await request(app).get('/ready')
       expect(response.status).toBe(200)
       expect(response.body).toEqual({ status: 'ready' })
     } finally {
@@ -49,9 +50,8 @@ describe('GET /ready', () => {
       'postgresql://nobody:nothing@127.0.0.1:1/dts_test',
     )
     try {
-      const response = await request(
-        createApp({ checkReady: readiness.check }),
-      ).get('/ready')
+      const { app } = appWith([], { checkReady: readiness.check })
+      const response = await request(app).get('/ready')
       expect(response.status).toBe(503)
       expect(response.body).toEqual({ status: 'unavailable' })
       expect(JSON.stringify(response.body)).not.toMatch(
@@ -69,9 +69,8 @@ describe('GET /ready', () => {
       ['no answer', () => new Promise<boolean>(() => undefined)],
     ]
     for (const [name, checkReady] of answers) {
-      const response = await request(
-        createApp({ checkReady, readyTimeoutMs: 50 }),
-      ).get('/ready')
+      const { app } = appWith([], { checkReady, readyTimeoutMs: 50 })
+      const response = await request(app).get('/ready')
       expect(response.status, name).toBe(503)
       expect(response.body, name).toEqual({ status: 'unavailable' })
     }
@@ -79,7 +78,7 @@ describe('GET /ready', () => {
 
   it('recovers: the same app answers 200 once the check succeeds', async () => {
     let up = false
-    const app = createApp({ checkReady: () => Promise.resolve(up) })
+    const { app } = appWith([], { checkReady: () => Promise.resolve(up) })
     expect((await request(app).get('/ready')).status).toBe(503)
     up = true
     expect((await request(app).get('/ready')).status).toBe(200)
@@ -88,7 +87,7 @@ describe('GET /ready', () => {
 
 describe('unknown routes', () => {
   it('are 404', async () => {
-    const app = createApp({ checkReady: () => Promise.resolve(true) })
+    const { app } = appWith()
     expect((await request(app).get('/nope')).status).toBe(404)
   })
 })

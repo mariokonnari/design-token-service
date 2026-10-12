@@ -34,6 +34,14 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dts_test
+      # Dummy API settings (ADR 0013). The API tests build their configuration in
+      # code and do not read these today; they exist so anything that boots the API
+      # from the environment (never production values) has valid ones. NODE_ENV is
+      # deliberately NOT set here: Vitest sets it, and the smoke test sets its own.
+      SESSION_SECRET: ci-only-dummy-session-secret-0123456789abcdef
+      ALLOWED_ORIGINS: https://app.example.test
+      TRUST_PROXY: '0'
+      SIGNUP_ENABLED: 'true'
 
     steps:
       - uses: actions/checkout@v7

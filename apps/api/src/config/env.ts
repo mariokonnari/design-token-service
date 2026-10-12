@@ -80,12 +80,26 @@ const schema = z.object({
       ),
     )
     .default([]),
+  // How many reverse proxies sit in front of the app and are trusted to set
+  // X-Forwarded-For (0 = none). Too low: every user shares the proxy's IP and one
+  // rate limit. Too high: clients can forge their IP. ADR 0013.
+  TRUST_PROXY: z
+    .string()
+    .regex(/^\d+$/, 'must be a whole number of proxy hops')
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(10))
+    .default(0),
 })
 
 export type Env = z.output<typeof schema>
 
 /** Variables that may be left blank in an env file, meaning "use the default". */
-const BLANK_MEANS_UNSET = ['PORT', 'SIGNUP_ENABLED', 'ALLOWED_ORIGINS']
+const BLANK_MEANS_UNSET = [
+  'PORT',
+  'SIGNUP_ENABLED',
+  'ALLOWED_ORIGINS',
+  'TRUST_PROXY',
+]
 
 export interface EnvIssue {
   variable: string
