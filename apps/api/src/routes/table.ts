@@ -4,6 +4,8 @@ import { authRoutes, type AuthRouteDeps } from './auth'
 import { brandRoutes, type BrandRouteDeps } from './brands'
 import { healthRoutes, type HealthDeps } from './health'
 import { orgRoutes, type OrgRouteDeps } from './orgs'
+import { publicRoutes, type PublicRouteDeps } from './public'
+import { releaseRoutes, type ReleaseRouteDeps } from './releases'
 import { tokenRoutes, type TokenRouteDeps } from './tokens'
 
 /**
@@ -50,6 +52,8 @@ export interface RouteTableDeps extends HealthDeps {
   orgs?: OrgRouteDeps
   brands?: BrandRouteDeps
   tokens?: TokenRouteDeps
+  releases?: ReleaseRouteDeps
+  public?: PublicRouteDeps
 }
 
 export function buildRouteTable({
@@ -57,6 +61,8 @@ export function buildRouteTable({
   orgs,
   brands,
   tokens,
+  releases,
+  public: publicDeps,
   ...health
 }: RouteTableDeps): RouteDef[] {
   return [
@@ -65,5 +71,7 @@ export function buildRouteTable({
     ...(orgs === undefined ? [] : orgRoutes(orgs)),
     ...(brands === undefined ? [] : brandRoutes(brands)),
     ...(tokens === undefined ? [] : tokenRoutes(tokens)),
+    ...(releases === undefined ? [] : releaseRoutes(releases)),
+    ...(publicDeps === undefined ? [] : publicRoutes(publicDeps)),
   ]
 }

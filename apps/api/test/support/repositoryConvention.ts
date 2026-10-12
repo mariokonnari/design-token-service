@@ -251,3 +251,64 @@ export function checkGlobalRepositorySource(
   }
   return report
 }
+
+/**
+ * PUBLIC repositories (src/repositories/public/*.ts) serve data that anyone may read
+ * WITHOUT a tenant scope, but only because the owner made it public (ADR 0015). They are
+ * the one place where tenant-owned models are read without `organizationId`, so they are
+ * checked the strictest way: no TenantScope, only READ operations on the three models a
+ * public URL walks through (Release, Brand, Organization), no raw SQL, and EVERY query
+ * must name the visibility rule (`visibility` and `PUBLIC`), so a public read can never
+ * return a private brand. A text heuristic: the privacy tests prove the behavior.
+ */
+export const PUBLIC_MODELS = ['release', 'brand', 'organization'] as const
+export const PUBLIC_OPERATIONS = ['findFirst', 'findMany', 'count'] as const
+
+export function checkPublicRepositorySource(
+  fileName: string,
+  source: string,
+): ConventionReport {
+  const file = parse(fileName, source)
+  const report: ConventionReport = { checked: [], violations: [] }
+
+  for (const { name, parameters, body } of callablesOf(file)) {
+    report.checked.push(name)
+    if (parameters.some((p) => p.type?.getText(file) === 'TenantScope')) {
+      report.violations.push({
+        where: name,
+        problem:
+          'takes a TenantScope: a tenant-scoped repository belongs in src/repositories/, not in public/',
+      })
+    }
+    if (body === undefined) continue
+    for (const use of dbUsesIn(body, file)) {
+      if (use.kind === 'raw') {
+        report.violations.push({
+          where: name,
+          problem: `${use.callee} is not allowed in a public repository (no raw SQL)`,
+        })
+        continue
+      }
+      const operation = use.callee.split('.').pop() ?? ''
+      if (!(PUBLIC_MODELS as readonly string[]).includes(use.model ?? '')) {
+        report.violations.push({
+          where: name,
+          problem: `${use.callee}(...) reads the model "${use.model}", which a public URL does not walk through`,
+        })
+      }
+      if (!(PUBLIC_OPERATIONS as readonly string[]).includes(operation)) {
+        report.violations.push({
+          where: name,
+          problem: `${use.callee}(...) is not a read operation (allowed: ${PUBLIC_OPERATIONS.join(', ')})`,
+        })
+      }
+      if (!/visibility/.test(use.text) || !/\bPUBLIC\b/.test(use.text)) {
+        report.violations.push({
+          where: name,
+          problem: `${use.callee}(...) does not state the visibility rule (visibility: 'PUBLIC')`,
+        })
+      }
+    }
+  }
+  return report
+}

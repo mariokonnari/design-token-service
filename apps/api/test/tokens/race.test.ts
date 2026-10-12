@@ -98,28 +98,33 @@ describe('2. two concurrent updates with the same expectedVersion', () => {
     const b = await freshBrand(t)
     for (let i = 0; i < ITER; i++) {
       const path = `race.u${i}`
-      expect(
-        (await putToken(b, t.editor, path, { type: 'number', value: 0 }))
-          .status,
-      ).toBe(201)
+      const created = await putToken(b, t.editor, path, {
+        type: 'number',
+        value: 0,
+      })
+      expect(created.status).toBe(201)
+      // A create's version is the new draftRevision (ADR 0014, ABA), not 1.
+      const v = (created.body as TokenBody).token?.version ?? -1
       const [x, y] = await Promise.all([
         putToken(b, t.editor, path, {
           type: 'number',
           value: 1,
-          expectedVersion: 1,
+          expectedVersion: v,
         }),
         putToken(b, t.owner, path, {
           type: 'number',
           value: 2,
-          expectedVersion: 1,
+          expectedVersion: v,
         }),
       ])
       expect([x, y].map(status).sort(), `iteration ${i}`).toEqual([200, 409])
       const loser = status(x) === 409 ? x : y
       expect(code(loser)).toBe('VERSION_CONFLICT')
-      expect((loser.body as TokenBody).error?.details?.currentVersion).toBe(2)
+      expect((loser.body as TokenBody).error?.details?.currentVersion).toBe(
+        v + 1,
+      )
       const row = (await tokenRows(pool, b.brand)).find((r) => r.path === path)
-      expect(row?.version, `iteration ${i}`).toBe(2)
+      expect(row?.version, `iteration ${i}`).toBe(v + 1)
     }
     // per iteration: 1 create + 1 winning update
     expect(await revisionOf(pool, b.brand)).toBe(ITER * 2)
@@ -130,14 +135,18 @@ describe('2. two concurrent updates with the same expectedVersion', () => {
     const b = await freshBrand(t)
     for (let i = 0; i < 30; i++) {
       const path = `race.d${i}`
-      await putToken(b, t.editor, path, { type: 'number', value: 0 })
+      const created = await putToken(b, t.editor, path, {
+        type: 'number',
+        value: 0,
+      })
+      const v = (created.body as TokenBody).token?.version ?? -1
       const [u, d] = await Promise.all([
         putToken(b, t.editor, path, {
           type: 'number',
           value: 1,
-          expectedVersion: 1,
+          expectedVersion: v,
         }),
-        deleteToken(b, t.owner, path, 1),
+        deleteToken(b, t.owner, path, v),
       ])
       const s = [u.status, d.status]
       // either the update won (200 then the delete sees version 2: 409) or the

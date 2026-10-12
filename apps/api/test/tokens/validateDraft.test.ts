@@ -50,8 +50,10 @@ describe('validateDraft: what is publishable', () => {
   })
 
   it('warnings alone do not block publishing', () => {
+    // (a semantic alias is included: a primitives-only draft exports nothing, ADR 0015)
     const result = validateDraft([
       row('primitive.color.x', 'color', { ...COLOR, hex: '#ffffff' }),
+      row('semantic.color.x', null, '{primitive.color.x}'),
     ])
     expect(result.issues.map((i) => i.code)).toEqual(['HEX_MISMATCH'])
     expect(result.issues[0]?.severity).toBe('warning')
@@ -113,6 +115,7 @@ describe('validateDraft: problems tokens-core finds', () => {
     const result = validateDraft([
       row('primitive.a.b-c', 'number', 1),
       row('primitive.a-b.c', 'number', 2),
+      row('semantic.n.x', 'number', 3), // keeps the draft exportable
     ])
     expect(result.publishable).toBe(false)
     expect(result.issues.map((i) => i.code)).toEqual([
@@ -174,8 +177,8 @@ describe('validateDraft: ordering and extension', () => {
     expect(reverse).toEqual(forward)
   })
 
-  it('DEFAULT_RULES is the tier rule and the CSS-name rule; a caller can ADD a rule without changing validateDraft', () => {
-    expect(DEFAULT_RULES).toHaveLength(2)
+  it('DEFAULT_RULES are the tier, CSS-name, nothing-to-export and release-size rules; a caller can ADD a rule without changing validateDraft', () => {
+    expect(DEFAULT_RULES).toHaveLength(4)
     const seen: number[] = []
     const noPureBlack: Rule = ({ resolved }) => {
       seen.push(resolved.length)
@@ -206,7 +209,7 @@ describe('validateDraft: ordering and extension', () => {
     const exploding: Rule = () => {
       throw new Error('boom')
     }
-    const result = validateDraft([blue], [...DEFAULT_RULES, exploding])
+    const result = validateDraft([blue, action], [...DEFAULT_RULES, exploding])
     expect(result.publishable).toBe(false)
     expect(result.issues.map((i) => i.code)).toEqual(['RULE_FAILED'])
   })

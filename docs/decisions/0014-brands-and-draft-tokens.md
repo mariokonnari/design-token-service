@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-12
 - Builds on: [0006](0006-token-subset-and-tier-rules.md), [0012](0012-data-model-and-tenancy.md), [0013](0013-auth-sessions-and-http-layer.md)
+- Amended in Phase 3d ([0015](0015-releases-and-public-api.md)): the token-version ABA hole is fixed (a create gets the new `draftRevision` as its version), the `flatten` quadratic-depth finding is fixed in tokens-core, and `validateDraft` gained two release rules.
 
 ## Context
 
@@ -36,7 +37,9 @@ Phase 3a/3b gave the API tenancy and sessions but no tenant data. Phase 3c adds 
 | exists | wrong | 409 `VERSION_CONFLICT` (carries `currentVersion`) |
 | exists | right | 200, `version + 1` |
 | missing | present | 409 `VERSION_CONFLICT` (`currentVersion: null`): there is nothing to match |
-| missing | absent | 201, version 1 |
+| missing | absent | 201, `version` = the new `draftRevision` (ABA, below; on a brand's first token that is 1) |
+
+**The version invariant (Phase 3d, fixes the ABA hole).** A token's `version` never exceeds the brand's `draftRevision` at its last write. Under the brand lock, with `r` the locked revision and `r + 1` the revision the mutation writes: a **create** gets `version = r + 1`; an **update** gets `version + 1` (safe: the old version was at most `r`, so the new one is at most `r + 1`); an **import** gives a surviving path `old + 1` and a new path `r + 1`. A path deleted and re-created therefore always gets a version larger than any it ever had (every earlier version was written at a revision at most `r`), so an editor holding the old version can never match the new token, with no tombstones. Existing rows already satisfy the invariant (created at 1 with a revision of at least 1, +1 per bump), so there was no data migration. Tested: create, delete, re-create, then a PUT or DELETE with the OLD version is 409; a seeded random sequence of create/update/delete/import checks `version <= draftRevision` after every step and that no path ever reuses a version.
 
 **No no-op detection**: sending identical data still bumps `version` and `draftRevision` (comparing JSON values would add a code path that could disagree with the database, for no safety gain). The editor must **refetch on any 409**; in particular a retried create after a lost response gets `VERSION_REQUIRED`.
 
@@ -74,9 +77,9 @@ The **same per-token limits apply to import**: every imported token goes back th
 
 `POST /tokens/import` with strict `{tree, expectedRevision}` (any other key, such as `mode`, is a 400). The tree is validated first, outside the lock (`tokens/validateImport.ts`): structure guard, `flatten`, at least 1 and at most 2000 tokens, the per-token limits. **Any error-severity issue refuses the whole import** (400 `INVALID_IMPORT`, issues listed, nothing changes). An **empty import is refused** too (a replace with nothing would wipe the draft by accident). Under the lock: a revision mismatch is 409 `REVISION_CONFLICT` (with `currentRevision`); otherwise delete all draft tokens and insert the new ones in one statement, then bump.
 
-**An import keeps versions counting up:** a path that survives gets `old version + 1` (new paths start at 1). Resetting to 1 would let an editor holding version 1 of the old token match the replaced one (an ABA hole).
+**An import keeps versions counting up:** a path that survives gets `old version + 1`, and a new path gets the revision the import writes (it started at 1 before Phase 3d, which left a delete-then-import ABA hole). Resetting to 1 would let an editor holding version 1 of the old token match the replaced one.
 
-**Hostile trees.** `tokens/treeGuard.ts` walks the tree **iteratively** before `flatten`: depth over 32, more than 10,000 objects or a reserved key is a 400. The reason is measured, not theoretical: `flatten` does not overflow the stack (it is iterative) but it **copies the path array at every level, so it is quadratic in depth**. One-token tree nested n levels, on the development machine: 5,000 levels 0.5 s, 10,000 levels 2.2 s, 20,000 levels 10.7 s, **50,000 levels 68 s of synchronous CPU** (the event loop is blocked for everyone), from a 300 KB body well under the cap. `JSON.parse` of that body takes 12 ms, and on Node 24 it never threw a `RangeError`, even at 1,000,000 levels (6 MB); the 400 `INVALID_JSON` mapping for a `RangeError` is pinned anyway by making `JSON.parse` throw for one marked body. **Finding for tokens-core (not changed here):** `flatten` should build paths without copying (a parent pointer or a string built once per node).
+**Hostile trees.** `tokens/treeGuard.ts` walks the tree **iteratively** before `flatten`: depth over 32, more than 10,000 objects or a reserved key is a 400. The reason is measured, not theoretical: `flatten` does not overflow the stack (it is iterative) but it **copies the path array at every level, so it is quadratic in depth**. One-token tree nested n levels, on the development machine: 5,000 levels 0.5 s, 10,000 levels 2.2 s, 20,000 levels 10.7 s, **50,000 levels 68 s of synchronous CPU** (the event loop is blocked for everyone), from a 300 KB body well under the cap. `JSON.parse` of that body takes 12 ms, and on Node 24 it never threw a `RangeError`, even at 1,000,000 levels (6 MB); the 400 `INVALID_JSON` mapping for a `RangeError` is pinned anyway by making `JSON.parse` throw for one marked body. **Fixed in Phase 3d:** `flatten` no longer copies the path per level. Its group frames form a parent chain (O(1) per level) and path strings are built lazily, only when an issue needs one, and once per token. Measured with the same scratch script on the same machine, before and after: 5,000 levels 547 ms to 14 ms, 10,000 levels 2,156 ms to 14 ms, 20,000 levels 10,378 ms to 35 ms, 50,000 levels 68,251 ms to 49 ms, 200,000 levels 156 ms. What remains is O(depth) per token, which is the size of the token's own path. A regression test (20,000 levels, bound 3 s; it measured 10.5 s before the fix) and a test of lazily built issue paths were added to tokens-core; all 552 existing tests, property tests included, stayed green. **The API-side depth guard stays** as defense in depth.
 
 **Body limit and rate limit.** The global parser is 16 KB. A route can declare `bodyLimit` in the route table; `createApp` replaces the global parser with a wrapper (still named `jsonParser`, so the route guard's expected middleware list is unchanged) that **skips exactly the routes that declare one**, and `mountRoutes` adds `express.json({limit})` to that route's chain **after** authentication, the role check and the rate limiter. So a body of 512 KB is never read for an unauthenticated caller (401), a non-member (404), a viewer (403) or a rate-limited user (429): tested with ~400 KB of syntactically **invalid** JSON, which gets 401/404/403 rather than 400/413. The matcher is exact and case-sensitive, so any disagreement with Express (a trailing slash, other letter case) lands on the **small** limit, the safe direction (tested). The import route has a per-user limiter (`tokenImport`, default 10 per 10 minutes, injectable, built on the same `createRateLimiters` code; refused callers do not use up the allowance because it runs after the access checks).
 
@@ -105,7 +108,7 @@ Prisma 7's interactive-transaction defaults are `maxWait` 2000 ms and `timeout` 
 ## Consequences and honest gaps
 
 - **Per-brand write serialization.** All writers to one brand queue on one row. At 8 concurrent writers the throughput is fine (the race suite does it hundreds of times); a brand with many simultaneous editors would feel it. Different brands never block each other.
-- **ABA on delete and re-create.** A token deleted and re-created gets version 1 again, so an editor holding the old version 1 can overwrite a token another editor re-created. Import avoids it (versions keep counting up); PUT-create after DELETE does not. A fix would be to create at `version = draftRevision` (always larger than any earlier version of the path) or to keep tombstones. Not done in this phase because "create gives version 1" was the agreed contract.
+- **ABA on delete and re-create: fixed in Phase 3d** (see the version invariant above). The "create gives version 1" contract changed to "create gives the new `draftRevision`"; for a brand's first token the two are the same.
 - **No pagination** on `GET /tokens`, `/tokens/tree` or `/validate`: bounded by the 2000-token cap, not by paging. `/validate` is O(n) per call and not cached; latency at 2000 tokens is **unmeasured**.
 - **No audit log** of who changed what (the brand revision counts changes but does not record them).
 - **No quotas** on brands per organization or on write routes. `SIGNUP_ENABLED` is the only abuse control; only the import route has a rate limit (in memory and per instance, ADR 0013).
@@ -115,7 +118,7 @@ Prisma 7's interactive-transaction defaults are `maxWait` 2000 ms and `timeout` 
 - **jsonb normalizes numbers and key order.** A stored value reads back equal in value, not byte for byte.
 - **Reserved names** (`constructor`, `prototype`) mean a legitimate token cannot use them. Existing rows with those names (none can exist yet) would map fine but could not be re-created.
 - **The 512 KB cap and the 16 KB cap come from different code** (the route table and `createApp`); a route that declares `bodyLimit` is the only way to get the larger one, and a test pins the exact list.
-- **Tokens-core finding:** `flatten` is quadratic in depth (above). The guard keeps the API safe; the library itself should be fixed.
+- **Tokens-core finding: fixed in Phase 3d** (above). The guard stays.
 
 ## Verification summary
 

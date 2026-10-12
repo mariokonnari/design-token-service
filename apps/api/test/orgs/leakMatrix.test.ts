@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createPrismaClient } from '../../src/db/client'
@@ -7,7 +8,7 @@ import { useDatabase } from '../support/db'
 import { assertTestDatabase } from '../support/guard'
 import { ALLOWED_ORIGIN } from '../support/http'
 import { join, organization, person } from '../support/orgFixture'
-import { makeBrand, makeToken } from '../db/helpers'
+import { makeBrand, makeRelease, makeToken } from '../db/helpers'
 
 // THE CROSS-TENANT LEAK MATRIX. It iterates the ROUTE TABLE: every org-scoped route
 // is called as (a) a member of ANOTHER org, (b) an authenticated user with a random
@@ -41,7 +42,14 @@ const COLOR = { colorSpace: 'srgb', components: [0, 0, 0] }
 const MATRIX: Record<
   string,
   {
-    path: (f: Fixture, orgId: string, brandId: string) => string
+    path: (
+      f: Fixture,
+      orgId: string,
+      brandId: string,
+      releaseNumber?: number,
+    ) => string
+    /** A route with `:number`: it MUST get the foreign-release-number cases (see below). */
+    release?: true
     /** A body, or a function of the live draftRevision (the import needs the current one). */
     body?: unknown
     /** Statuses a legitimate owner may get (the sanity test). Default: 200 or 204. */
@@ -82,7 +90,11 @@ const MATRIX: Record<
     path: (_f, orgId, brandId) =>
       `/api/orgs/${orgId}/brands/${brandId}/tokens/import`,
     body: (live: { revision: number }) => ({
-      tree: { primitive: { n: { one: { $type: 'number', $value: 1 } } } },
+      // (a semantic token too: the releases routes that follow need an exportable draft)
+      tree: {
+        primitive: { n: { one: { $type: 'number', $value: 1 } } },
+        semantic: { n: { one: { $type: 'number', $value: 1 } } },
+      },
       expectedRevision: live.revision,
     }),
   },
@@ -104,6 +116,28 @@ const MATRIX: Record<
   'DELETE /api/orgs/:orgId/brands/:brandId/tokens/:path': {
     path: (f, orgId, brandId) =>
       `/api/orgs/${orgId}/brands/${brandId}/tokens/${f.tokenPath}?expectedVersion=1`,
+  },
+  // Releases (ADR 0015). Registered after the token routes, so the draft is the
+  // imported one (exportable) when the sanity run reaches it.
+  'POST /api/orgs/:orgId/brands/:brandId/releases': {
+    path: (_f, orgId, brandId) =>
+      `/api/orgs/${orgId}/brands/${brandId}/releases`,
+    body: (live: { revision: number }) => ({ expectedRevision: live.revision }),
+    ok: [201],
+  },
+  'GET /api/orgs/:orgId/brands/:brandId/releases': {
+    path: (_f, orgId, brandId) =>
+      `/api/orgs/${orgId}/brands/${brandId}/releases`,
+  },
+  'GET /api/orgs/:orgId/brands/:brandId/releases/:number': {
+    path: (_f, orgId, brandId, n = 1) =>
+      `/api/orgs/${orgId}/brands/${brandId}/releases/${n}`,
+    release: true,
+  },
+  'GET /api/orgs/:orgId/brands/:brandId/releases/:number/css': {
+    path: (_f, orgId, brandId, n = 1) =>
+      `/api/orgs/${orgId}/brands/${brandId}/releases/${n}/css`,
+    release: true,
   },
 }
 
@@ -138,6 +172,17 @@ describe('the leak matrix', () => {
     expect(
       missing,
       `org-scoped routes without a matrix case: ${missing.join(', ')}`,
+    ).toEqual([])
+    // every route with a release number in its path needs the foreign-release cases
+    const numbered = routes
+      .filter(isOrgScoped)
+      .filter((route) => route.path.includes(':number'))
+      .map(keyOf)
+    expect(numbered.length).toBeGreaterThanOrEqual(2) // not vacuous
+    const unflagged = numbered.filter((key) => MATRIX[key]?.release !== true)
+    expect(
+      unflagged,
+      `routes with :number but no release flag in the matrix: ${unflagged.join(', ')}`,
     ).toEqual([])
     const stale = Object.keys(MATRIX).filter((key) => !scoped.includes(key))
     expect(
@@ -395,6 +440,115 @@ describe('the leak matrix', () => {
     const list = await send('get', base)
     expect((list.body as { tokens: unknown[] }).tokens).toEqual([])
     expect(await snapshot()).toEqual(before)
+  })
+
+  it('FOREIGN RELEASE NUMBER: release 1 exists in two brands of two organizations; every :number route answers the foreign one like any miss, and each brand only ever returns its own', async () => {
+    const ctx = await authApp(db)
+    const orgA = await organization(pool, 'release-a')
+    const orgB = await organization(pool, 'release-b')
+    const dual = await person(pool, ctx.sessions, 'dual-release@example.com')
+    const onlyB = await person(pool, ctx.sessions, 'only-b@example.com')
+    await join(pool, dual.id, orgA, 'OWNER')
+    await join(pool, dual.id, orgB, 'OWNER') // full power in BOTH: only the parent is wrong
+    await join(pool, onlyB.id, orgB, 'OWNER')
+    const brandA = String(
+      (await makeBrand(pool, { organizationId: orgA }))['id'],
+    )
+    const brandB = String(
+      (await makeBrand(pool, { organizationId: orgB }))['id'],
+    )
+    const release = (brandId: string, marker: string) =>
+      makeRelease(pool, {
+        brandId,
+        number: 1,
+        snapshot: { marker },
+        note: marker,
+        css: `/* ${marker} */
+`,
+        cssSha256: createHash('sha256')
+          .update(
+            `/* ${marker} */
+`,
+          )
+          .digest('hex'),
+      })
+    await release(brandA, 'content of brand A')
+    await release(brandB, 'content of brand B')
+    const fixture: Fixture = {
+      orgId: () => orgA,
+      targetUserId: dual.id,
+      brandId: brandA,
+      tokenPath: TOKEN_PATH,
+    }
+    const headerNames = (r: request.Response) =>
+      Object.keys(r.headers)
+        .filter((h) => !['x-request-id', 'date', 'etag'].includes(h))
+        .sort()
+        .join(',')
+    const before = (await pool.query('SELECT * FROM "Release" ORDER BY id'))
+      .rows
+
+    const routes = ctx.routes
+      .filter(isOrgScoped)
+      .filter((route) => route.path.includes(':number'))
+    expect(routes.length).toBeGreaterThanOrEqual(2) // not vacuous
+    for (const route of routes) {
+      const entry = MATRIX[keyOf(route)]
+      if (entry === undefined)
+        throw new Error(`no matrix case for ${keyOf(route)}`)
+      const label = keyOf(route)
+      // the number really is in the URL, or the case proves nothing
+      expect(entry.path(fixture, orgB, brandB, 4242), label).toContain('4242')
+
+      const own = await call(
+        ctx.app,
+        route,
+        entry.path(fixture, orgB, brandB, 1),
+        undefined,
+        dual.cookie,
+      )
+      const miss = await call(
+        ctx.app,
+        route,
+        entry.path(fixture, orgB, brandB, 999),
+        undefined,
+        dual.cookie,
+      )
+      // brand A's release 1, asked through ORG B's URL (wrong parent), even by a member of both
+      const wrongParent = await call(
+        ctx.app,
+        route,
+        entry.path(fixture, orgB, brandA, 1),
+        undefined,
+        dual.cookie,
+      )
+      // a member of B only, asking for A's release through A's URL
+      const outsider = await call(
+        ctx.app,
+        route,
+        entry.path(fixture, orgA, brandA, 1),
+        undefined,
+        onlyB.cookie,
+      )
+
+      expect(own.status, `${label} own`).toBe(200)
+      const text = JSON.stringify(own.body) + own.text
+      expect(text, `${label} returns B's own release`).not.toContain('brand A')
+      expect(text, label).toContain('brand B')
+      for (const r of [miss, wrongParent, outsider]) {
+        expect(r.status, label).toBe(404)
+        expect(r.body, label).toEqual({
+          error: { code: 'NOT_FOUND', message: 'Not found.' },
+        })
+        expect(headerNames(r), label).toBe(headerNames(miss))
+      }
+      expect(JSON.stringify(wrongParent.body) + wrongParent.text).not.toContain(
+        'brand A',
+      )
+    }
+    expect(
+      (await pool.query('SELECT * FROM "Release" ORDER BY id')).rows,
+    ).toEqual(before)
   })
 
   it('sanity: the same calls DO work for a real member of the organization', async () => {

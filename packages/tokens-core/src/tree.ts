@@ -53,8 +53,38 @@ function isTokenType(value: string): value is TokenType {
   return (TOKEN_TYPES as readonly string[]).includes(value)
 }
 
-function childPath(parent: readonly string[], key: string): string {
-  return joinPath([...parent, key])
+/**
+ * A group on the way down. Frames form a parent chain (O(1) per level) instead of each
+ * one carrying a copy of its path: copying the segments at every level made `flatten`
+ * quadratic in nesting depth (ADR 0014). A path string is built from the chain only
+ * when an issue or a token needs it.
+ */
+interface GroupFrame {
+  node: Record<string, unknown>
+  /** The key under the parent; undefined for the root. */
+  name: string | undefined
+  parent: GroupFrame | undefined
+  inherited: InheritedType
+}
+
+function segmentsOf(frame: GroupFrame): string[] {
+  const reversed: string[] = []
+  for (
+    let current: GroupFrame | undefined = frame;
+    current !== undefined;
+    current = current.parent
+  ) {
+    if (current.name !== undefined) reversed.push(current.name)
+  }
+  return reversed.reverse()
+}
+
+function pathOf(frame: GroupFrame): string {
+  return joinPath(segmentsOf(frame))
+}
+
+function childPathOf(frame: GroupFrame, key: string): string {
+  return joinPath([...segmentsOf(frame), key])
 }
 
 /** Reads a `$type` value, reporting anything that is not a supported type. */
@@ -79,12 +109,6 @@ function readType(raw: unknown, path: string, issues: Issue[]): TypeReading {
     )
   }
   return { kind: 'invalid' }
-}
-
-interface GroupFrame {
-  node: Record<string, unknown>
-  segments: string[]
-  inherited: InheritedType
 }
 
 /**
@@ -235,16 +259,23 @@ export function flatten(tree: unknown): FlattenResult {
   }
 
   const stack: GroupFrame[] = [
-    { node: tree, segments: [], inherited: { kind: 'none' } },
+    {
+      node: tree,
+      name: undefined,
+      parent: undefined,
+      inherited: { kind: 'none' },
+    },
   ]
 
   for (let frame = stack.pop(); frame !== undefined; frame = stack.pop()) {
-    const { node, segments } = frame
-    const path = joinPath(segments)
+    const { node } = frame
+    // Built only when an issue needs it (never for a clean group).
+    let cachedPath: string | undefined
+    const groupPath = (): string => (cachedPath ??= pathOf(frame))
     let inherited = frame.inherited
 
     if (Object.hasOwn(node, '$type')) {
-      const reading = readType(node['$type'], path, issues)
+      const reading = readType(node['$type'], groupPath(), issues)
       inherited =
         reading.kind === 'type'
           ? { kind: 'type', type: reading.type }
@@ -260,7 +291,7 @@ export function flatten(tree: unknown): FlattenResult {
             issues.push(
               error(
                 'INVALID_STRUCTURE',
-                path,
+                groupPath(),
                 '$description must be a string',
                 {
                   field: key,
@@ -272,7 +303,7 @@ export function flatten(tree: unknown): FlattenResult {
           issues.push(
             error(
               'UNSUPPORTED_FEATURE',
-              path,
+              groupPath(),
               'Group extension ($extends) is not supported',
               {
                 field: key,
@@ -283,7 +314,7 @@ export function flatten(tree: unknown): FlattenResult {
           issues.push(
             error(
               'UNSUPPORTED_FEATURE',
-              childPath(segments, key),
+              childPathOf(frame, key),
               'Root tokens ($root) are not supported',
             ),
           )
@@ -291,28 +322,32 @@ export function flatten(tree: unknown): FlattenResult {
           issues.push(
             error(
               'UNSUPPORTED_FEATURE',
-              path,
+              groupPath(),
               'JSON Pointer references ($ref) are not supported; use a {curly.brace} alias',
               { field: key },
             ),
           )
-          if (segments.length > 0) rejected.add(path)
+          if (frame.parent !== undefined) rejected.add(groupPath())
         } else {
           issues.push(
-            warning('UNSUPPORTED_FEATURE', path, `Property ${key} is ignored`, {
-              field: key,
-            }),
+            warning(
+              'UNSUPPORTED_FEATURE',
+              groupPath(),
+              `Property ${key} is ignored`,
+              {
+                field: key,
+              },
+            ),
           )
         }
         continue
       }
 
-      const keyPath = childPath(segments, key)
       if (!isValidName(key)) {
         issues.push(
           error(
             'INVALID_NAME',
-            keyPath,
+            childPathOf(frame, key),
             `"${key}" is not a valid name: use lowercase letters and digits in hyphen-separated groups (e.g. "blue-500")`,
           ),
         )
@@ -321,6 +356,7 @@ export function flatten(tree: unknown): FlattenResult {
 
       const child = node[key]
       if (!isRecord(child)) {
+        const keyPath = childPathOf(frame, key)
         issues.push(
           error(
             'INVALID_STRUCTURE',
@@ -330,9 +366,9 @@ export function flatten(tree: unknown): FlattenResult {
         )
         rejected.add(keyPath)
       } else if (Object.hasOwn(child, '$value')) {
-        readToken(child, [...segments, key], inherited)
+        readToken(child, [...segmentsOf(frame), key], inherited)
       } else {
-        stack.push({ node: child, segments: [...segments, key], inherited })
+        stack.push({ node: child, name: key, parent: frame, inherited })
       }
     }
   }

@@ -13,7 +13,9 @@ import { MembershipLookupRepository } from './repositories/global/memberships'
 import { OrganizationRepository } from './repositories/global/organizations'
 import { UserRepository } from './repositories/global/users'
 import { BrandRepository } from './repositories/brands'
+import { PublicReleaseRepository } from './repositories/public/releases'
 import { MembershipRepository } from './repositories/memberships'
+import { ReleaseRepository } from './repositories/releases'
 import { TokenRepository } from './repositories/tokens'
 import { buildRouteTable } from './routes/table'
 
@@ -65,6 +67,14 @@ const app = createApp({
     tokens: {
       tokens: new TokenRepository(db),
       importLimiter: limiters.tokenImport,
+    },
+    releases: {
+      releases: new ReleaseRepository(db),
+      publishLimiter: limiters.publish,
+    },
+    public: {
+      releases: new PublicReleaseRepository(db),
+      limiter: limiters.publicRead,
     },
   }),
   guards: {

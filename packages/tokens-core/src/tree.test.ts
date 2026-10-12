@@ -594,3 +594,47 @@ describe('nest', () => {
     })
   })
 })
+
+// REGRESSION (ADR 0014 finding): flatten copied the path array and re-joined the path
+// at every level, so it was quadratic in nesting depth. Measured before the fix on the
+// development machine: 5,000 levels 0.5 s, 10,000 levels 2.2 s, 20,000 levels 10.4 s,
+// 50,000 levels 68 s. The bound below is deliberately generous (machine speed varies):
+// the old code needed ~10 s here, the fixed code a few dozen milliseconds.
+describe('flatten: deep nesting is not quadratic', () => {
+  function deepTree(depth: number): Record<string, unknown> {
+    const root: Record<string, unknown> = {}
+    let cursor = root
+    for (let level = 0; level < depth - 1; level += 1) {
+      const next: Record<string, unknown> = {}
+      cursor['g'] = next
+      cursor = next
+    }
+    cursor['t'] = { $type: 'number', $value: 1 }
+    return root
+  }
+
+  it('flattens a one-token tree nested 20,000 levels deep well within 3 s', () => {
+    const depth = 20_000
+    const tree = deepTree(depth)
+    const start = Date.now()
+    const result = flatten(tree)
+    const elapsed = Date.now() - start
+    expect(result.issues).toEqual([])
+    expect(result.tokens).toHaveLength(1)
+    expect(result.tokens[0]?.path.split('.')).toHaveLength(depth)
+    expect(elapsed, `took ${Math.round(elapsed)} ms`).toBeLessThan(3000)
+  }, 60_000)
+
+  it('keeps the path of an issue deep in the tree correct (paths are built lazily)', () => {
+    const tree = deepTree(50)
+    let cursor = tree
+    while (cursor['g'] !== undefined)
+      cursor = cursor['g'] as Record<string, unknown>
+    cursor['Bad Name'] = { $type: 'number', $value: 1 }
+    const result = flatten(tree)
+    const expected = `${Array.from({ length: 49 }, () => 'g').join('.')}.Bad Name`
+    expect(result.issues.map((issue) => [issue.code, issue.path])).toEqual([
+      ['INVALID_NAME', expected],
+    ])
+  })
+})

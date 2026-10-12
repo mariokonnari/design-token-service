@@ -101,6 +101,8 @@ describe('GET /brands/:brandId/validate', () => {
     const t = await team()
     await putToken(t, t.editor, 'primitive.a.b-c', { type: 'number', value: 1 })
     await putToken(t, t.editor, 'primitive.a-b.c', { type: 'number', value: 2 })
+    // (a semantic token keeps the draft exportable: a primitives-only one is NOTHING_TO_EXPORT)
+    await putToken(t, t.editor, 'semantic.n.x', { type: 'number', value: 3 })
     const body = (await validate(t, t.viewer)).body as TokenBody
     expect(body.publishable).toBe(false)
     expect(body.issues?.map((i) => i.code)).toEqual([

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { getScope } from '../auth/requireOrg'
 import { NotFoundError, ValidationError } from '../errors'
 import type { TokenRecord, TokenRepository } from '../repositories/tokens'
+import { issueDetails, issueView } from '../tokens/issueView'
 import { rowToToken, type DraftIssue } from '../tokens/mapper'
 import { validateDraft } from '../tokens/validateDraft'
 import { validateImport } from '../tokens/validateImport'
@@ -46,29 +47,12 @@ const deleteQuery = z.strictObject({
     .pipe(version),
 })
 
-/** At most this many issues are sent back; a broken import can have thousands. */
-export const MAX_ISSUES_IN_RESPONSE = 50
-
-export function issueView(issue: Issue | DraftIssue) {
-  return {
-    code: issue.code,
-    severity: issue.severity,
-    path: issue.path,
-    ...(issue.field === undefined ? {} : { field: issue.field }),
-    message: issue.message,
-    ...(issue.related === undefined ? {} : { related: issue.related }),
-  }
-}
-
 export function invalidWith(
   message: string,
   code: string,
   issues: readonly (Issue | DraftIssue)[],
 ): ValidationError {
-  return new ValidationError(message, code, {
-    issues: issues.slice(0, MAX_ISSUES_IN_RESPONSE).map(issueView),
-    issueCount: issues.length,
-  })
+  return new ValidationError(message, code, issueDetails(issues))
 }
 
 function tokenView(token: TokenRecord) {

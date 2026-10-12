@@ -173,7 +173,7 @@ export class TokenRepository {
     if (!isUuid(brandId)) throw new NotFoundError()
     const row = tokenToRow(input.token)
 
-    return this.mutate(scope, brandId, async (tx) => {
+    return this.mutate(scope, brandId, async (tx, revision) => {
       const existing = await tx.token.findFirst({
         where: {
           brandId,
@@ -273,6 +273,9 @@ export class TokenRepository {
             type: row.type,
             value: row.value as Prisma.InputJsonValue,
             description: row.description,
+            // The version of a NEW token is the revision this mutation writes
+            // (revision + 1), see the invariant on `mutate`.
+            version: revision + 1,
             // connect checks the organization too: a brand of another one cannot be hit.
             brand: {
               connect: { id: brandId, organizationId: scope.organizationId },
@@ -371,8 +374,9 @@ export class TokenRepository {
           )
         }
         // A path that survives the import keeps counting UP (old version + 1), so an
-        // editor holding the old version can never match the replaced token (the
-        // version must not go back to 1: that would be an ABA hole). New paths start at 1.
+        // editor holding the old version can never match the replaced token. A NEW
+        // path gets the revision this import writes (revision + 1): larger than any
+        // version the path ever had, even if it was deleted earlier (ABA).
         const previous = await tx.token.findMany({
           where: { brandId, brand: { organizationId: scope.organizationId } },
           select: { path: true, version: true },
@@ -380,7 +384,7 @@ export class TokenRepository {
         const versions = new Map(previous.map((p) => [p.path, p.version]))
         const payload = rows.map((r) => ({
           ...r,
-          version: (versions.get(r.path) ?? 0) + 1,
+          version: (versions.get(r.path) ?? revision) + 1,
         }))
         await tx.token.deleteMany({
           where: { brandId, brand: { organizationId: scope.organizationId } },
@@ -406,6 +410,15 @@ export class TokenRepository {
    * The lock -> change -> bump transaction every mutation goes through, so none can
    * forget the lock or the revision. A failure of any step rolls everything back, so
    * a rejected change never moves `draftRevision`.
+   *
+   * VERSION INVARIANT (ADR 0014, ABA): a token's `version` never exceeds the brand's
+   * `draftRevision` at its last write. `change` receives the revision BEFORE the bump
+   * (`revision`); this mutation writes `revision + 1`.
+   * - create: `version = revision + 1`, larger than any version the path ever had
+   *   (those were written at revisions <= `revision`), so a delete + re-create never
+   *   repeats a version;
+   * - update: `version + 1 <= revision + 1`, because the old version was <= `revision`;
+   * - import: survivors `old + 1`, new paths `revision + 1`, the same two arguments.
    */
   private async mutate<T extends object>(
     scope: TenantScope,

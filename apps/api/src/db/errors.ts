@@ -51,3 +51,32 @@ function isBusy(error: unknown): boolean {
   }
   return visit(error, 0)
 }
+
+/**
+ * True when `error` is a unique-constraint violation: Prisma P2002 from the query
+ * builder, or Postgres SQLSTATE 23505 (raw queries wrap it as P2010 with the SQLSTATE
+ * in `meta`, the driver adapter may nest it in `cause`). Used for the backstop that
+ * turns a duplicate (brandId, number) into a 409 instead of a 500.
+ */
+export function isUniqueViolation(error: unknown): boolean {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  ) {
+    return true
+  }
+  const seen = new Set<unknown>()
+  const visit = (value: unknown, depth: number): boolean => {
+    if (typeof value !== 'object' || value === null) return false
+    if (seen.has(value) || depth > 6) return false
+    seen.add(value)
+    const record = value as Record<string, unknown>
+    if (record['code'] === '23505' || record['sqlState'] === '23505') {
+      return true
+    }
+    return ['cause', 'meta', 'driverAdapterError', 'originalError'].some(
+      (key) => visit(record[key], depth + 1),
+    )
+  }
+  return visit(error, 0)
+}

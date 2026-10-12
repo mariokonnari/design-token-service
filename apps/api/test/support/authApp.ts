@@ -18,6 +18,8 @@ import {
 import { UserRepository } from '../../src/repositories/global/users'
 import { OrganizationRepository } from '../../src/repositories/global/organizations'
 import { BrandRepository } from '../../src/repositories/brands'
+import { PublicReleaseRepository } from '../../src/repositories/public/releases'
+import { ReleaseRepository } from '../../src/repositories/releases'
 import { TokenRepository } from '../../src/repositories/tokens'
 import type { TxTiming } from '../../src/db/txTiming'
 import { MembershipRepository } from '../../src/repositories/memberships'
@@ -48,6 +50,8 @@ export interface AuthAppOptions {
   tokenTiming?: Partial<TxTiming>
   /** A separate client for the token repository (e.g. one with a pool of 1). */
   tokenDb?: Db
+  /** A separate client for the PUBLIC release repository (e.g. one that counts or refuses use). */
+  publicDb?: Db
 }
 
 /** The real app with the real auth routes, repositories and a REAL database. */
@@ -80,6 +84,8 @@ export async function authApp(db: Db, options: AuthAppOptions = {}) {
     signup: rule('signup'),
     changePassword: rule('changePassword'),
     tokenImport: rule('tokenImport'),
+    publish: rule('publish'),
+    publicRead: rule('publicRead'),
     ...(options.keys === undefined ? {} : { keys: options.keys }),
   })
 
@@ -104,6 +110,17 @@ export async function authApp(db: Db, options: AuthAppOptions = {}) {
       tokens: {
         tokens: new TokenRepository(options.tokenDb ?? db, options.tokenTiming),
         importLimiter: limiters.tokenImport,
+      },
+      releases: {
+        releases: new ReleaseRepository(
+          options.tokenDb ?? db,
+          options.tokenTiming,
+        ),
+        publishLimiter: limiters.publish,
+      },
+      public: {
+        releases: new PublicReleaseRepository(options.publicDb ?? db),
+        limiter: limiters.publicRead,
       },
     }),
     ...(options.extraRoutes ?? []),

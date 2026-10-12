@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   checkGlobalRepositorySource,
+  checkPublicRepositorySource,
   checkRepositorySource,
   tenantOwnedModels,
 } from '../support/repositoryConvention'
@@ -13,6 +14,7 @@ import {
 const API = join(import.meta.dirname, '..', '..')
 const REPOSITORIES = join(API, 'src', 'repositories')
 const GLOBAL = join(REPOSITORIES, 'global')
+const PUBLIC = join(REPOSITORIES, 'public')
 const schema = readFileSync(join(API, 'prisma', 'schema.prisma'), 'utf8')
 const tenantOwned = tenantOwnedModels(schema)
 
@@ -31,12 +33,15 @@ const sourcesIn = (dir: string) =>
     }))
 
 describe('where repositories may live', () => {
-  it('src/repositories holds only .ts files and the global/ directory', () => {
+  it('src/repositories holds only .ts files and the global/ and public/ directories', () => {
     const odd = readdirSync(REPOSITORIES, { withFileTypes: true })
       .filter(
         (entry) =>
           !(entry.isFile() && entry.name.endsWith('.ts')) &&
-          !(entry.isDirectory() && entry.name === 'global'),
+          !(
+            entry.isDirectory() &&
+            (entry.name === 'global' || entry.name === 'public')
+          ),
       )
       .map((entry) => entry.name)
     // A repository in any other subdirectory would escape both checks below.
@@ -45,6 +50,13 @@ describe('where repositories may live', () => {
 
   it('global/ holds only .ts files', () => {
     const odd = readdirSync(GLOBAL, { withFileTypes: true })
+      .filter((entry) => !(entry.isFile() && entry.name.endsWith('.ts')))
+      .map((entry) => entry.name)
+    expect(odd).toEqual([])
+  })
+
+  it('public/ holds only .ts files', () => {
+    const odd = readdirSync(PUBLIC, { withFileTypes: true })
       .filter((entry) => !(entry.isFile() && entry.name.endsWith('.ts')))
       .map((entry) => entry.name)
     expect(odd).toEqual([])
@@ -108,6 +120,77 @@ describe('the real GLOBAL repositories stay out of tenant data', () => {
       r.report.violations.map((v) => `${r.name}: ${v.where}: ${v.problem}`),
     )
     expect(violations).toEqual([])
+  })
+})
+
+describe('the real PUBLIC repositories only read what the owner made public', () => {
+  const reports = sourcesIn(PUBLIC).map(({ name, source }) => ({
+    name,
+    report: checkPublicRepositorySource(name, source),
+  }))
+
+  it('inspects at least one function (the check is not vacuous)', () => {
+    const checked = reports.flatMap((r) => r.report.checked)
+    expect(checked).toEqual(
+      expect.arrayContaining(['PublicReleaseRepository.latest']),
+    )
+  })
+
+  it('has no violations: no TenantScope, read-only, no raw SQL, visibility PUBLIC in every query', () => {
+    const violations = reports.flatMap((r) =>
+      r.report.violations.map((v) => `${r.name}: ${v.where}: ${v.problem}`),
+    )
+    expect(violations).toEqual([])
+  })
+})
+
+describe('the public checker can fail (self-tests on bad samples)', () => {
+  const problems = (body: string) =>
+    checkPublicRepositorySource('public/sample.ts', body).violations.map(
+      (v) => `${v.where}: ${v.problem}`,
+    )
+
+  it('passes a read that states the visibility rule', () => {
+    expect(
+      problems(`
+        export class P {
+          async latest(slug: string) {
+            return this.db.release.findFirst({ where: { brand: { slug, visibility: 'PUBLIC' } } })
+          }
+        }`),
+    ).toEqual([])
+  })
+
+  it('flags a read that forgets the visibility rule', () => {
+    expect(
+      problems(`
+        export class P {
+          async latest(slug: string) {
+            return this.db.release.findFirst({ where: { brand: { slug } } })
+          }
+        }`),
+    ).toEqual([expect.stringContaining('does not state the visibility rule')])
+  })
+
+  it('flags a write, a model a public URL does not walk through, raw SQL and a TenantScope', () => {
+    expect(
+      problems(`
+        export class P {
+          async a() { return this.db.release.update({ where: { visibility: 'PUBLIC' } }) }
+          async b() { return this.db.token.findMany({ where: { visibility: 'PUBLIC' } }) }
+          async c() { return this.db.$queryRaw\`SELECT 1\` }
+          async d(scope: TenantScope) { return this.db.brand.findFirst({ where: { visibility: 'PUBLIC' } }) }
+        }`),
+    ).toEqual([
+      expect.stringContaining(
+        'P.a: this.db.release.update(...) is not a read operation',
+      ),
+      expect.stringContaining(
+        'P.b: this.db.token.findMany(...) reads the model "token"',
+      ),
+      expect.stringContaining('P.c: this.db.$queryRaw is not allowed'),
+      expect.stringContaining('P.d: takes a TenantScope'),
+    ])
   })
 })
 

@@ -28,7 +28,12 @@ import {
  * publish) and RULE_FAILED (a validation rule crashed; see validateDraft).
  */
 export type DraftIssueCode =
-  IssueCode | 'UNMAPPABLE_ROW' | 'EMPTY_DRAFT' | 'RULE_FAILED'
+  | IssueCode
+  | 'UNMAPPABLE_ROW'
+  | 'EMPTY_DRAFT'
+  | 'RULE_FAILED'
+  | 'NOTHING_TO_EXPORT'
+  | 'RELEASE_TOO_LARGE'
 
 export type DraftIssue = Omit<Issue, 'code'> & { code: DraftIssueCode }
 

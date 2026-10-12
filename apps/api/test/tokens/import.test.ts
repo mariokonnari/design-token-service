@@ -136,7 +136,7 @@ describe('POST /tokens/import: replace mode', () => {
     expect(await tokenRows(pool, t.brand)).toHaveLength(1)
   })
 
-  it('a path that survives the import gets version+1 (a stale editor can NOT match its old version); new paths start at 1', async () => {
+  it('a path that survives the import gets version+1 (a stale editor can NOT match its old version); new paths get the new draftRevision (ADR 0014, ABA)', async () => {
     const t = await tokenTeam(pool, db)
     await putToken(t, t.editor, 'primitive.color.blue', {
       type: 'color',
@@ -149,7 +149,7 @@ describe('POST /tokens/import: replace mode', () => {
     const rows = await tokenRows(pool, t.brand)
     expect(rows.map((x) => [x.path, x.version])).toEqual([
       ['primitive.color.blue', 2],
-      ['primitive.color.red', 1],
+      ['primitive.color.red', 2], // the import is revision 2
     ])
     const stale = await putToken(t, t.editor, 'primitive.color.blue', {
       type: 'color',
