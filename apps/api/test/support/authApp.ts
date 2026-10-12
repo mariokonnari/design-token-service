@@ -17,6 +17,9 @@ import {
 } from '../../src/http/rateLimit'
 import { UserRepository } from '../../src/repositories/global/users'
 import { OrganizationRepository } from '../../src/repositories/global/organizations'
+import { BrandRepository } from '../../src/repositories/brands'
+import { TokenRepository } from '../../src/repositories/tokens'
+import type { TxTiming } from '../../src/db/txTiming'
 import { MembershipRepository } from '../../src/repositories/memberships'
 import { createRequireOrg } from '../../src/auth/requireOrg'
 import { MembershipLookupRepository } from '../../src/repositories/global/memberships'
@@ -41,6 +44,10 @@ export interface AuthAppOptions {
   config?: Partial<AppConfig>
   passwords?: PasswordServiceOptions
   extraRoutes?: RouteDef[]
+  /** Lock/transaction timing for the draft token repository (tests use tiny values). */
+  tokenTiming?: Partial<TxTiming>
+  /** A separate client for the token repository (e.g. one with a pool of 1). */
+  tokenDb?: Db
 }
 
 /** The real app with the real auth routes, repositories and a REAL database. */
@@ -72,6 +79,7 @@ export async function authApp(db: Db, options: AuthAppOptions = {}) {
     loginIp: rule('loginIp'),
     signup: rule('signup'),
     changePassword: rule('changePassword'),
+    tokenImport: rule('tokenImport'),
     ...(options.keys === undefined ? {} : { keys: options.keys }),
   })
 
@@ -91,6 +99,11 @@ export async function authApp(db: Db, options: AuthAppOptions = {}) {
         organizations: new OrganizationRepository(db),
         lookup: memberships,
         members: new MembershipRepository(db),
+      },
+      brands: { brands: new BrandRepository(db) },
+      tokens: {
+        tokens: new TokenRepository(options.tokenDb ?? db, options.tokenTiming),
+        importLimiter: limiters.tokenImport,
       },
     }),
     ...(options.extraRoutes ?? []),
@@ -131,6 +144,13 @@ export function post(target: Target, path: string, body?: unknown) {
 
 export function patch(target: Target, path: string, body?: unknown) {
   const test = target.patch(path).set('Origin', ALLOWED_ORIGIN)
+  return body === undefined
+    ? test
+    : test.set('Content-Type', 'application/json').send(body as object)
+}
+
+export function put(target: Target, path: string, body?: unknown) {
+  const test = target.put(path).set('Origin', ALLOWED_ORIGIN)
   return body === undefined
     ? test
     : test.set('Content-Type', 'application/json').send(body as object)

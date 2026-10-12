@@ -1,8 +1,10 @@
 import type { RequestHandler } from 'express'
 import type { Role } from '../tenancy/scope'
 import { authRoutes, type AuthRouteDeps } from './auth'
+import { brandRoutes, type BrandRouteDeps } from './brands'
 import { healthRoutes, type HealthDeps } from './health'
 import { orgRoutes, type OrgRouteDeps } from './orgs'
+import { tokenRoutes, type TokenRouteDeps } from './tokens'
 
 /**
  * THE ROUTE TABLE: the single source of truth for what the API serves and who
@@ -24,7 +26,7 @@ import { orgRoutes, type OrgRouteDeps } from './orgs'
 export type RouteAccess = 'public' | 'authenticated' | { orgRole: Role }
 
 export interface RouteDef {
-  method: 'get' | 'post' | 'patch' | 'delete'
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete'
   /** The full path, registered at the top level (no nested routers). */
   path: string
   access: RouteAccess
@@ -34,21 +36,34 @@ export interface RouteDef {
   before?: readonly RequestHandler[]
   /** Runs after the access checks, before the handler (e.g. a per-user rate limiter). */
   after?: readonly RequestHandler[]
+  /**
+   * A bigger JSON body limit for THIS route (e.g. '512kb'), instead of the global 16 KB.
+   * The route's own parser runs after `before`, the access checks and `after`, so a
+   * caller who is not authenticated, not a member or rate limited never makes the
+   * server read the body. The global parser skips exactly these routes (see createApp).
+   */
+  bodyLimit?: string
 }
 
 export interface RouteTableDeps extends HealthDeps {
   auth?: AuthRouteDeps
   orgs?: OrgRouteDeps
+  brands?: BrandRouteDeps
+  tokens?: TokenRouteDeps
 }
 
 export function buildRouteTable({
   auth,
   orgs,
+  brands,
+  tokens,
   ...health
 }: RouteTableDeps): RouteDef[] {
   return [
     ...healthRoutes(health),
     ...(auth === undefined ? [] : authRoutes(auth)),
     ...(orgs === undefined ? [] : orgRoutes(orgs)),
+    ...(brands === undefined ? [] : brandRoutes(brands)),
+    ...(tokens === undefined ? [] : tokenRoutes(tokens)),
   ]
 }

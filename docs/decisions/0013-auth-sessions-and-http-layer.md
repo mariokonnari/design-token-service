@@ -91,6 +91,8 @@ An organization can never end up with zero owners. Every change that could reduc
 
 **Tested with real concurrent requests against Postgres**, 30 iterations each, in seven shapes (each demotes the other, each removes the other, one demotes and one removes, both leave, both demote themselves, three owners in a cycle with demotion and with removal): exactly one of two succeeds, an owner always remains, no 5xx. **Mutation proof:** removing only `FOR UPDATE` while keeping every check made 6 of the 8 race tests fail.
 
+*Note added in Phase 3c ([0014](0014-brands-and-draft-tokens.md)):* these owner races run **30** iterations each, not the 100 later used for the draft-token races (50 for the 8-request distinct-create scenario, 100 for the other three). The lower count was not revisited; the mutation proof above is what shows these tests detect a missing lock.
+
 ## Alternatives considered
 
 - **Stateless JWT only** (no database lookup). Faster, but a stolen or old token stays valid until it expires and there is no logout-all or password-change revocation. Rejected: the user lookup per request is one indexed query and buys instant revocation.

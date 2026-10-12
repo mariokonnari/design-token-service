@@ -55,6 +55,21 @@ export function assertCanManageMembers(scope: TenantScope): void {
 }
 
 /**
+ * Changing a brand's visibility (private/public) is an owner decision; an editor may
+ * still rename it. This is the policy `refinedBy` names on PATCH brand: the route is
+ * open to editors and this narrows the `visibility` field.
+ */
+export function canChangeVisibility(scope: TenantScope): boolean {
+  return hasRoleAtLeast(scope, 'OWNER')
+}
+
+export function assertCanChangeVisibility(scope: TenantScope): void {
+  if (!canChangeVisibility(scope)) {
+    throw new ForbiddenError('Only an owner can change a brand’s visibility.')
+  }
+}
+
+/**
  * Any member may remove THEMSELVES (leave); removing someone else needs an owner.
  * This is the policy `refinedBy` names on the DELETE member route: the route is open
  * to every member and this narrows it.

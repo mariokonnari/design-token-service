@@ -1,4 +1,4 @@
-import type { Express, RequestHandler } from 'express'
+import express, { type Express, type RequestHandler } from 'express'
 import type { Role } from '../tenancy/scope'
 import type { RouteDef } from './table'
 
@@ -29,7 +29,16 @@ function chainFor(route: RouteDef, guards: RouteGuards): RequestHandler[] {
       access_.push(guards.requireOrg(access.orgRole))
     }
   }
-  return [...(route.before ?? []), ...access_, ...(route.after ?? [])]
+  const parser =
+    route.bodyLimit === undefined
+      ? []
+      : [express.json({ limit: route.bodyLimit })]
+  return [
+    ...(route.before ?? []),
+    ...access_,
+    ...(route.after ?? []),
+    ...parser,
+  ]
 }
 
 /**

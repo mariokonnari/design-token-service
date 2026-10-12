@@ -40,6 +40,8 @@ export interface RateLimitConfig {
   loginIp: RateLimitRule
   signup: RateLimitRule
   changePassword: RateLimitRule
+  /** Per user; bulk token import. */
+  tokenImport: RateLimitRule
   keys?: RateLimitKeys
 }
 
@@ -50,6 +52,7 @@ export const DEFAULT_RATE_LIMITS = {
   loginIp: { windowMs: 15 * MINUTE, limit: 60 },
   signup: { windowMs: 60 * MINUTE, limit: 5 },
   changePassword: { windowMs: 15 * MINUTE, limit: 5 },
+  tokenImport: { windowMs: 10 * MINUTE, limit: 10 },
 } as const satisfies Omit<RateLimitConfig, 'keys'>
 
 export interface RateLimiters {
@@ -57,6 +60,7 @@ export interface RateLimiters {
   loginIp: RequestHandler
   signup: RequestHandler
   changePassword: RequestHandler
+  tokenImport: RequestHandler
 }
 
 const MAX_EMAIL_KEY = 254
@@ -106,6 +110,13 @@ export function createRateLimiters(config: RateLimitConfig): RateLimiters {
     signup: limiter(config.signup, (req) => ipKey(req)),
     changePassword: limiter(
       config.changePassword,
+      (req, res) =>
+        config.keys?.user?.(req, res) ??
+        `user:${(res.locals['auth'] as { userId?: string } | undefined)?.userId ?? ipKey(req)}`,
+    ),
+    // Runs AFTER authentication and BEFORE the 512 KB body is read or parsed.
+    tokenImport: limiter(
+      config.tokenImport,
       (req, res) =>
         config.keys?.user?.(req, res) ??
         `user:${(res.locals['auth'] as { userId?: string } | undefined)?.userId ?? ipKey(req)}`,

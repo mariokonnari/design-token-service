@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { ForbiddenError } from '../src/errors'
 import {
   assertAtLeast,
+  assertCanChangeVisibility,
   assertCanManageMembers,
   assertCanRemoveMember,
+  canChangeVisibility,
   canManageMembers,
   canRemoveMember,
   hasRoleAtLeast,
@@ -100,5 +102,23 @@ describe('member management', () => {
     expect(() => hasRoleAtLeast(forged, 'VIEWER')).toThrow(TypeError)
     expect(() => canManageMembers(forged)).toThrow(TypeError)
     expect(() => canRemoveMember(forged, OTHER)).toThrow(TypeError)
+    expect(() => canChangeVisibility(forged)).toThrow(TypeError)
+  })
+})
+
+describe('brand visibility is an owner decision', () => {
+  it.each([
+    ['OWNER', true],
+    ['EDITOR', false],
+    ['VIEWER', false],
+  ] as const)('%s: allowed = %s', (role, allowed) => {
+    expect(canChangeVisibility(scopeFor(role))).toBe(allowed)
+    if (allowed) {
+      expect(() => assertCanChangeVisibility(scopeFor(role))).not.toThrow()
+    } else {
+      expect(() => assertCanChangeVisibility(scopeFor(role))).toThrow(
+        ForbiddenError,
+      )
+    }
   })
 })

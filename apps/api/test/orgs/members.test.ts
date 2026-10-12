@@ -383,11 +383,14 @@ describe('routes narrowed by `refinedBy` have per-role tests', () => {
     const ctx = await team()
     const refined = ctx.routes.filter((route) => route.refinedBy !== undefined)
     // A new refinedBy route must add its own per-role tests and be listed here.
-    expect(refined.map((r) => `${r.method.toUpperCase()} ${r.path}`)).toEqual([
-      'DELETE /api/orgs/:orgId/members/:userId',
+    // (PATCH brand's per-role evidence lives in test/brands/brands.test.ts.)
+    expect(
+      refined.map((r) => [`${r.method.toUpperCase()} ${r.path}`, r.refinedBy]),
+    ).toEqual([
+      ['DELETE /api/orgs/:orgId/members/:userId', 'canRemoveMember'],
+      ['PATCH /api/orgs/:orgId/brands/:brandId', 'canChangeVisibility'],
     ])
     for (const route of refined) {
-      expect(route.refinedBy).toBe('canRemoveMember')
       expect(
         typeof (policy as Record<string, unknown>)[route.refinedBy ?? ''],
       ).toBe('function')

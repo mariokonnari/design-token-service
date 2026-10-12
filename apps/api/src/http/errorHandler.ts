@@ -7,6 +7,8 @@ interface HttpFailure {
   status: number
   code: string
   message: string
+  details?: Readonly<Record<string, unknown>> | undefined
+  retryAfterSeconds?: number | undefined
 }
 
 const MAX_ISSUES = 5
@@ -70,7 +72,13 @@ function bodyParserFailure(error: unknown): HttpFailure | undefined {
 
 function toFailure(error: unknown): HttpFailure | undefined {
   if (error instanceof AppError) {
-    return { status: error.status, code: error.code, message: error.message }
+    return {
+      status: error.status,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      retryAfterSeconds: error.retryAfterSeconds,
+    }
   }
   if (error instanceof ZodError) {
     return {
@@ -109,11 +117,17 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
       const log = (req as { log?: Logger }).log ?? logger
       log.error({ err: error }, 'unhandled error')
     }
-    const { status, code, message } = failure ?? {
+    const { status, code, message, details, retryAfterSeconds } = failure ?? {
       status: 500,
       code: 'INTERNAL_ERROR',
       message: 'Something went wrong.',
     }
-    res.status(status).json({ error: { code, message } })
+    if (retryAfterSeconds !== undefined) {
+      res.setHeader('Retry-After', String(retryAfterSeconds))
+    }
+    res.status(status).json({
+      error:
+        details === undefined ? { code, message } : { code, message, details },
+    })
   }
 }

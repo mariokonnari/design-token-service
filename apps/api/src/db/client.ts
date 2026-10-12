@@ -10,8 +10,19 @@ import { PrismaClient } from '../generated/prisma/client'
  */
 export type Db = PrismaClient
 
-export function createPrismaClient(databaseUrl: string): Db {
+export interface DbOptions {
+  /** Maximum connections in the pool (the `pg` default, 10, when omitted). */
+  poolMax?: number
+}
+
+export function createPrismaClient(
+  databaseUrl: string,
+  options: DbOptions = {},
+): Db {
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg({
+      connectionString: databaseUrl,
+      ...(options.poolMax === undefined ? {} : { max: options.poolMax }),
+    }),
   })
 }

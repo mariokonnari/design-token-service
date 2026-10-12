@@ -12,7 +12,9 @@ import { DEFAULT_RATE_LIMITS, createRateLimiters } from './http/rateLimit'
 import { MembershipLookupRepository } from './repositories/global/memberships'
 import { OrganizationRepository } from './repositories/global/organizations'
 import { UserRepository } from './repositories/global/users'
+import { BrandRepository } from './repositories/brands'
 import { MembershipRepository } from './repositories/memberships'
+import { TokenRepository } from './repositories/tokens'
 import { buildRouteTable } from './routes/table'
 
 let env: ReturnType<typeof parseEnv>
@@ -58,6 +60,11 @@ const app = createApp({
       organizations: new OrganizationRepository(db),
       lookup: memberships,
       members: new MembershipRepository(db),
+    },
+    brands: { brands: new BrandRepository(db) },
+    tokens: {
+      tokens: new TokenRepository(db),
+      importLimiter: limiters.tokenImport,
     },
   }),
   guards: {

@@ -1,9 +1,9 @@
 import { isValidName } from '@dts/tokens-core'
 import type { Db } from '../db/client'
-import { ConflictError, ValidationError } from '../errors'
+import { ConflictError, NotFoundError, ValidationError } from '../errors'
 import { Prisma, type Brand } from '../generated/prisma/client'
 import { isUuid } from '../ids'
-import { assertCanWrite } from '../tenancy/policy'
+import { assertCanChangeVisibility, assertCanWrite } from '../tenancy/policy'
 import { requireScope, type TenantScope } from '../tenancy/scope'
 
 export type BrandRecord = Brand
@@ -14,7 +14,25 @@ export interface CreateBrandInput {
   name: string
 }
 
+export const VISIBILITIES = ['PRIVATE', 'PUBLIC'] as const
+export type BrandVisibility = (typeof VISIBILITIES)[number]
+
+export interface UpdateBrandInput {
+  name?: string
+  visibility?: BrandVisibility
+}
+
 const MAX_NAME_LENGTH = 200
+
+function cleanName(raw: string): string {
+  const name = raw.trim()
+  if (name === '' || name.length > MAX_NAME_LENGTH) {
+    throw new ValidationError(
+      `The name must be 1 to ${MAX_NAME_LENGTH} characters.`,
+    )
+  }
+  return name
+}
 
 /**
  * Brands of one organization. Conventions (checked by test/repositories/convention.test.ts):
@@ -50,17 +68,12 @@ export class BrandRepository {
     requireScope(scope)
     assertCanWrite(scope)
 
-    const name = input.name.trim()
     if (!isValidName(input.slug)) {
       throw new ValidationError(
         'The slug may only contain lowercase letters, digits and single hyphens.',
       )
     }
-    if (name === '' || name.length > MAX_NAME_LENGTH) {
-      throw new ValidationError(
-        `The name must be 1 to ${MAX_NAME_LENGTH} characters.`,
-      )
-    }
+    const name = cleanName(input.name)
 
     try {
       return await this.db.brand.create({
@@ -81,5 +94,37 @@ export class BrandRepository {
       }
       throw error
     }
+  }
+
+  /**
+   * Renames and/or changes visibility. Editors may rename; only an owner may change
+   * visibility (policy.canChangeVisibility). The slug is immutable. A brand of
+   * another organization (or a malformed id) is a plain 404.
+   */
+  async update(
+    scope: TenantScope,
+    id: string,
+    input: UpdateBrandInput,
+  ): Promise<BrandRecord> {
+    requireScope(scope)
+    assertCanWrite(scope)
+    if (input.visibility !== undefined) assertCanChangeVisibility(scope)
+    if (input.name === undefined && input.visibility === undefined) {
+      throw new ValidationError('Nothing to change.')
+    }
+    if (!isUuid(id)) throw new NotFoundError()
+
+    const data: { name?: string; visibility?: BrandVisibility } = {}
+    if (input.name !== undefined) data.name = cleanName(input.name)
+    if (input.visibility !== undefined) data.visibility = input.visibility
+
+    const result = await this.db.brand.updateMany({
+      where: { id, organizationId: scope.organizationId },
+      data,
+    })
+    if (result.count === 0) throw new NotFoundError()
+    const brand = await this.get(scope, id)
+    if (brand === null) throw new NotFoundError()
+    return brand
   }
 }
