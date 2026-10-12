@@ -1,6 +1,11 @@
 import pg from 'pg'
 import { afterAll, beforeEach } from 'vitest'
 import { assertTestDatabase } from './guard'
+import { truncateAll } from './truncate'
+
+// Re-exported so existing tests keep importing it from here. The implementation
+// lives in truncate.ts, which does not import Vitest (the e2e server entry needs it).
+export { truncateAll }
 
 /**
  * Opens a connection pool to the test database and truncates every table before
@@ -19,24 +24,4 @@ export function useDatabase(): { pool: pg.Pool } {
     await pool.end()
   })
   return { pool }
-}
-
-export async function truncateAll(pool: pg.Pool): Promise<void> {
-  assertTestDatabase(process.env['DATABASE_URL'])
-  const current = await pool.query<{ db: string }>(
-    'SELECT current_database() AS db',
-  )
-  const database = current.rows[0]?.db ?? ''
-  if (!database.endsWith('_test')) {
-    throw new Error(
-      `Refusing to truncate: connected to "${database}", not a *_test database.`,
-    )
-  }
-  const tables = await pool.query<{ tablename: string }>(
-    `SELECT tablename FROM pg_tables
-      WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`,
-  )
-  if (tables.rows.length === 0) return
-  const list = tables.rows.map((row) => `"${row.tablename}"`).join(', ')
-  await pool.query(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`)
 }

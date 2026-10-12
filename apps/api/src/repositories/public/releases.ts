@@ -1,5 +1,6 @@
-import { isValidName, type TokenTree } from '@dts/tokens-core'
+import type { TokenTree } from '@dts/tokens-core'
 import type { Db } from '../../db/client'
+import { isValidSlug } from '../../slug'
 
 /**
  * The latest release of a PUBLIC brand, found by slugs (ADR 0015). The only
@@ -24,15 +25,13 @@ export interface PublicRelease {
   snapshot: TokenTree
 }
 
-/** Slugs this long cannot be addressed publicly (the API itself sets no limit on slug length). */
-export const MAX_PUBLIC_SLUG_LENGTH = 200
-
+/**
+ * The slug rule is the one used when an organization or brand is created (63
+ * characters at most, ADR 0014 amendment), so every slug that can exist can be
+ * addressed publicly, and anything else is refused before the database is touched.
+ */
 export function isPublicSlug(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length <= MAX_PUBLIC_SLUG_LENGTH &&
-    isValidName(value)
-  )
+  return typeof value === 'string' && isValidSlug(value)
 }
 
 export class PublicReleaseRepository {

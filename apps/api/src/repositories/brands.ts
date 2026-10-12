@@ -1,9 +1,9 @@
-import { isValidName } from '@dts/tokens-core'
 import type { Db } from '../db/client'
 import { ConflictError, NotFoundError, ValidationError } from '../errors'
 import { Prisma, type Brand } from '../generated/prisma/client'
 import { isUuid } from '../ids'
 import { assertCanChangeVisibility, assertCanWrite } from '../tenancy/policy'
+import { MAX_SLUG_LENGTH, isValidSlug } from '../slug'
 import { requireScope, type TenantScope } from '../tenancy/scope'
 
 export type BrandRecord = Brand
@@ -29,6 +29,8 @@ function cleanName(raw: string): string {
   if (name === '' || name.length > MAX_NAME_LENGTH) {
     throw new ValidationError(
       `The name must be 1 to ${MAX_NAME_LENGTH} characters.`,
+      'VALIDATION_ERROR',
+      { field: 'name' },
     )
   }
   return name
@@ -68,9 +70,11 @@ export class BrandRepository {
     requireScope(scope)
     assertCanWrite(scope)
 
-    if (!isValidName(input.slug)) {
+    if (!isValidSlug(input.slug)) {
       throw new ValidationError(
-        'The slug may only contain lowercase letters, digits and single hyphens.',
+        `The slug may only contain lowercase letters, digits and single hyphens, and be at most ${MAX_SLUG_LENGTH} characters.`,
+        'VALIDATION_ERROR',
+        { field: 'slug' },
       )
     }
     const name = cleanName(input.name)

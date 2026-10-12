@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-12
 - Builds on: [0006](0006-token-subset-and-tier-rules.md), [0012](0012-data-model-and-tenancy.md), [0013](0013-auth-sessions-and-http-layer.md)
+- Amended in Phase 4a: organization and brand **slugs are at most 63 characters** (`src/slug.ts`, the DNS label limit), enforced by the repositories, by the database (hand-written CHECKs `Organization_slug_length` and `Brand_slug_length`, migration `20261012150000_slug_length`; `db:drift` cannot see them, `test/db/constraints.test.ts` guards them) and by the public routes. The 400 for a bad slug or name on create now carries `details.field` (`slug` or `name`) so a client can mark the field. A duplicate brand slug is still the generic 409 `CONFLICT` (an organization duplicate is `SLUG_TAKEN`).
 - Amended in Phase 3d ([0015](0015-releases-and-public-api.md)): the token-version ABA hole is fixed (a create gets the new `draftRevision` as its version), the `flatten` quadratic-depth finding is fixed in tokens-core, and `validateDraft` gained two release rules.
 
 ## Context

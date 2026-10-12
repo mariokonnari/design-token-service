@@ -15,6 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:e2e": "pnpm --filter @dts/ui test:e2e",
+    "test:e2e:web": "pnpm --filter web test:e2e",
+    "test:e2e:web:build": "pnpm --filter web test:e2e:build",
     "generate:theme": "pnpm --filter @dts/ui generate:theme",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",

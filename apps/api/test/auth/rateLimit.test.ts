@@ -60,6 +60,69 @@ describe('the defaults', () => {
   })
 })
 
+// The web app tells people "try again in about N minutes" from this header, so
+// it must be present on EVERY 429 of the real limiters, a plain integer count of
+// seconds (RFC 9110 allows a date; the client only understands seconds), and
+// never longer than the window.
+describe('429 carries a numeric Retry-After (the web retry message depends on it)', () => {
+  const secondsHeader = (value: unknown): number => {
+    expect(typeof value).toBe('string')
+    expect(value as string).toMatch(/^\d+$/)
+    return Number(value)
+  }
+
+  it('login (per IP + email): integer seconds, 1 .. the 15-minute window', async () => {
+    const { app } = await authApp(db, {
+      limits: { loginAccount: { limit: 2 } },
+      keys,
+    })
+    for (let i = 0; i < 2; i++)
+      await login(app, 'a@example.com', 'wrong password!!')
+    const blocked = await login(app, 'a@example.com', 'wrong password!!')
+    expect(blocked.status).toBe(429)
+    const seconds = secondsHeader(blocked.headers['retry-after'])
+    expect(seconds).toBeGreaterThanOrEqual(1)
+    expect(seconds).toBeLessThanOrEqual(15 * 60)
+  })
+
+  it('login (per IP): integer seconds, 1 .. the 15-minute window', async () => {
+    const { app } = await authApp(db, {
+      limits: { loginIp: { limit: 2 } },
+      keys,
+    })
+    for (let i = 0; i < 2; i++)
+      await login(app, `u${i}@example.com`, 'wrong password!!')
+    const blocked = await login(app, 'u9@example.com', 'wrong password!!')
+    expect(blocked.status).toBe(429)
+    const seconds = secondsHeader(blocked.headers['retry-after'])
+    expect(seconds).toBeGreaterThanOrEqual(1)
+    expect(seconds).toBeLessThanOrEqual(15 * 60)
+  })
+
+  const signupFrom = (app: Parameters<typeof request>[0], email: string) =>
+    fromIp(
+      post(request(app), '/api/auth/signup', { email, password: PASSWORD }),
+      'ip-1',
+    )
+
+  it('signup (per IP): integer seconds, 1 .. the 1-hour window, code RATE_LIMITED', async () => {
+    const { app } = await authApp(db, {
+      limits: { signup: { limit: 2 } },
+      keys,
+    })
+    for (let i = 0; i < 2; i++) {
+      const ok = await signupFrom(app, `s${i}@example.com`)
+      expect(ok.status).toBe(201)
+    }
+    const blocked = await signupFrom(app, 's9@example.com')
+    expect(blocked.status).toBe(429)
+    expect((blocked.body as Body).error?.code).toBe('RATE_LIMITED')
+    const seconds = secondsHeader(blocked.headers['retry-after'])
+    expect(seconds).toBeGreaterThanOrEqual(1)
+    expect(seconds).toBeLessThanOrEqual(60 * 60)
+  })
+})
+
 describe('login: per IP + email, FAILED attempts only', () => {
   it('blocks after the limit with 429 RATE_LIMITED and a Retry-After header', async () => {
     const { app } = await authApp(db, {

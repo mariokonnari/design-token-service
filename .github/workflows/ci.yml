@@ -95,3 +95,20 @@ jobs:
             packages/ui/playwright-report/
             packages/ui/test-results/
           retention-days: 7
+
+      # Real-stack browser tests (ADR 0016): Chromium (installed above) -> the built
+      # web bundle -> the real API (test-only entry) -> the Postgres service. The API
+      # entry creates and migrates its own database (dts_e2e_test) on the same server.
+      # test:e2e:build rebuilds the bundle first: generate:theme (above) rewrote a
+      # workspace source file after "pnpm build", and the suite refuses a stale build.
+      - name: Web e2e (real API + Postgres)
+        run: pnpm test:e2e:web:build
+      - name: Upload Playwright report and traces (web)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-web
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7

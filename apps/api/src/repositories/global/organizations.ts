@@ -1,7 +1,7 @@
-import { isValidName } from '@dts/tokens-core'
 import type { Db } from '../../db/client'
 import { ConflictError, ValidationError } from '../../errors'
 import { Prisma } from '../../generated/prisma/client'
+import { MAX_SLUG_LENGTH, isValidSlug } from '../../slug'
 
 /**
  * Creating an organization happens BEFORE any tenant scope exists (the creator has
@@ -29,14 +29,18 @@ export class OrganizationRepository {
     input: { name: string; slug: string },
   ): Promise<OrganizationRecord> {
     const name = input.name.trim()
-    if (!isValidName(input.slug)) {
+    if (!isValidSlug(input.slug)) {
       throw new ValidationError(
-        'The slug may only contain lowercase letters, digits and single hyphens.',
+        `The slug may only contain lowercase letters, digits and single hyphens, and be at most ${MAX_SLUG_LENGTH} characters.`,
+        'VALIDATION_ERROR',
+        { field: 'slug' },
       )
     }
     if (name === '' || name.length > MAX_NAME_LENGTH) {
       throw new ValidationError(
         `The name must be 1 to ${MAX_NAME_LENGTH} characters.`,
+        'VALIDATION_ERROR',
+        { field: 'name' },
       )
     }
     try {

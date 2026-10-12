@@ -189,6 +189,8 @@ describe('ONE uniform 404: private, missing, no release, malformed', () => {
         ['dot segments (encoded)', '%2E%2E', '%2E'],
         ['an encoded slash', 'a%2Fb', t.brandSlug],
         ['an encoded NUL', '%00', t.brandSlug],
+        ['a 64-character slug', 'a'.repeat(64), t.brandSlug],
+        ['a 64-character brand slug', t.orgSlug, 'a'.repeat(64)],
         ['a 201-character slug', 'a'.repeat(201), t.brandSlug],
         ['a unicode slug', 'caf%C3%A9', t.brandSlug],
         ['an uppercase brand slug', t.orgSlug, t.brandSlug.toUpperCase()],
@@ -251,6 +253,14 @@ describe('ONE uniform 404: private, missing, no release, malformed', () => {
       expect(r.status, org).toBe(404)
       expect(r.text, org).toBe(NOT_FOUND)
     }
+    // The cap is 63, the same as the cap on creating a slug (ADR 0014 amendment):
+    // 64 characters is refused before any database access, for either slug.
+    const tooLong = await getPublic(guarded, 'x'.repeat(64), 'brand', 'css')
+    expect(tooLong.status).toBe(404)
+    expect(tooLong.text).toBe(NOT_FOUND)
+    const tooLongBrand = await getPublic(guarded, 'org', 'x'.repeat(64), 'css')
+    expect(tooLongBrand.status).toBe(404)
+    expect(tooLongBrand.text).toBe(NOT_FOUND)
     expect(touched).toBe(0)
     // the double is live: a well-formed slug DOES query (and the double refuses it: 500)
     const valid = await getPublic(guarded, 'some-org', 'some-brand', 'css')

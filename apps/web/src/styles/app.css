@@ -1,0 +1,273 @@
+/*
+ * The web app's own styles. The same rules as packages/ui (ADR 0008), enforced for
+ * this file by test/cssRules.test.ts:
+ * - only semantic variables from the @dts/ui theme, never primitive ones;
+ * - no raw color values and no var() fallbacks;
+ * - every variable used here is defined in every theme.
+ * The theme has no heading-size or wide-spacing tokens (ADR 0016 lists that as a
+ * gap), so type scale and page widths are plain rem/em/ch lengths: lengths, not
+ * colors, which the rules do not cover.
+ */
+
+body {
+  margin: 0;
+}
+
+.app-root {
+  box-sizing: border-box;
+  min-height: 100vh;
+  background-color: var(--semantic-color-surface);
+  color: var(--semantic-color-text);
+  font-family: var(--semantic-font-family-sans);
+  font-size: var(--semantic-font-size-md);
+  line-height: 1.5;
+}
+
+/* Text that is only for assistive technology (the live region, the error prefix). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The skip link is the first tab stop; it is hidden until it has focus. */
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: var(--semantic-space-inset-sm);
+  left: var(--semantic-space-inset-sm);
+  z-index: 10;
+  padding: var(--semantic-space-inset-sm) var(--semantic-space-inset-md);
+  background-color: var(--semantic-color-surface);
+  color: var(--semantic-color-text);
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+  font-weight: var(--semantic-font-weight-strong);
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--semantic-space-gap-md);
+  padding: var(--semantic-space-inset-sm) var(--semantic-space-inset-md);
+  border-bottom: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+}
+
+.app-name {
+  font-weight: var(--semantic-font-weight-strong);
+}
+
+.app-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--semantic-space-gap-md);
+}
+
+.app-notice,
+.app-main {
+  box-sizing: border-box;
+  padding: var(--semantic-space-inset-md);
+}
+
+/* <main> is a skip-link target, not a control: focusing it needs no ring. */
+.app-main:focus {
+  outline: none;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.page--narrow {
+  max-width: 28rem;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-weight: var(--semantic-font-weight-strong);
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+/* The h1 gets focus after a navigation; it is not a control, so it only
+   shows a ring when the browser says it should (keyboard navigation). */
+h1:focus {
+  outline: none;
+}
+
+h1:focus-visible {
+  outline: var(--semantic-border-width-focus) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: 0.25rem;
+}
+
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--semantic-color-text-muted);
+  font-size: var(--semantic-font-size-sm);
+}
+
+.meta {
+  color: var(--semantic-color-text-muted);
+  font-size: var(--semantic-font-size-sm);
+}
+
+/* Links in the content: underlined (so they are not marked by color alone),
+   with a visible focus ring, and still distinct in forced-colors mode. */
+.link {
+  color: var(--semantic-color-action-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  border-radius: var(--semantic-radius-control);
+}
+
+.link:hover {
+  color: var(--semantic-color-action-primary-hover);
+}
+
+.link:focus-visible {
+  outline: var(--semantic-border-width-focus) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .link {
+    color: LinkText;
+  }
+
+  .link:hover {
+    color: LinkText;
+  }
+
+  .link:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .skip-link {
+    border-color: ButtonText;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--semantic-space-gap-md);
+}
+
+.form > * {
+  align-self: stretch;
+}
+
+.form > .dts-button {
+  align-self: flex-start;
+}
+
+.form-summary__list {
+  margin: var(--semantic-space-inset-xs) 0 0;
+  padding-left: 1.25rem;
+}
+
+.create {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+  padding-top: var(--semantic-space-inset-md);
+  border-top: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--semantic-space-gap-md);
+  padding: var(--semantic-space-inset-sm) var(--semantic-space-inset-md);
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+}
+
+.card-list > li > .link {
+  font-weight: var(--semantic-font-weight-strong);
+}
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--semantic-space-gap-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--semantic-font-size-sm);
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  margin-right: var(--semantic-space-gap-sm);
+  color: var(--semantic-color-text-muted);
+}
+
+.details {
+  display: grid;
+  gap: var(--semantic-space-gap-sm);
+  margin: 0;
+}
+
+.details dt {
+  color: var(--semantic-color-text-muted);
+  font-size: var(--semantic-font-size-sm);
+}
+
+.details dd {
+  margin: 0;
+}

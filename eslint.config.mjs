@@ -80,8 +80,45 @@ export default defineConfig([
 
   // Playwright specs run in Node (page.evaluate callbacks still use DOM types).
   {
-    files: ['packages/ui/e2e/**/*.ts'],
+    files: [
+      'packages/ui/e2e/**/*.ts',
+      'apps/web/e2e/**/*.ts',
+      'apps/web/scripts/**/*.ts',
+    ],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
+
+  // apps/web renders text from the server (error messages, names). It must only
+  // ever do that as React text, which escapes it. These forbid every way of turning
+  // a string into markup, so a server message can never become HTML (ADR 0016).
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message:
+            'dangerouslySetInnerHTML is forbidden in apps/web: render server text as React text so it is escaped (ADR 0016).',
+        },
+        {
+          selector:
+            "AssignmentExpression[left.type='MemberExpression'][left.property.name=/^(innerHTML|outerHTML)$/]",
+          message:
+            'Assigning innerHTML/outerHTML is forbidden in apps/web: render text through React so it is escaped (ADR 0016).',
+        },
+        {
+          selector: "CallExpression[callee.property.name='insertAdjacentHTML']",
+          message:
+            'insertAdjacentHTML is forbidden in apps/web: render text through React so it is escaped (ADR 0016).',
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='document'][callee.property.name=/^(write|writeln)$/]",
+          message: 'document.write is forbidden in apps/web (ADR 0016).',
+        },
+      ],
+    },
   },
 
   // Boundary 1: packages/ui source must not import tokens-core. Build scripts

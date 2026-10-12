@@ -56,6 +56,26 @@ describe.each([
       constraint,
     })
   })
+
+  // The 63-character cap (ADR 0014 amendment) is its own named CHECK, so a test
+  // can tell WHICH rule fired. A 64-letter slug passes the format rule.
+  it('accepts a slug of exactly 63 characters', async () => {
+    await expect(make('a'.repeat(63))).resolves.toBeTruthy()
+    await expect(
+      make(`${'b'.repeat(31)}-${'c'.repeat(31)}`),
+    ).resolves.toBeTruthy()
+  })
+
+  it('rejects a slug of 64 characters with the length CHECK', async () => {
+    expect(await rejection(make('a'.repeat(64)))).toEqual({
+      code: SQLSTATE.check,
+      constraint: constraint.replace('_format', '_length'),
+    })
+    expect(await rejection(make('a'.repeat(200)))).toEqual({
+      code: SQLSTATE.check,
+      constraint: constraint.replace('_format', '_length'),
+    })
+  })
 })
 
 describe('Token.path CHECK', () => {

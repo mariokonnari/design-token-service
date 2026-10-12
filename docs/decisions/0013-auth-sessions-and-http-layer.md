@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-08
 - Builds on: [0012](0012-data-model-and-tenancy.md)
+- Amended in Phase 4a ([0016](0016-web-app-foundation.md)): for local web development `ALLOWED_ORIGINS` must include `http://localhost:5173` (the Vite dev server). The browser sends that `Origin` and the Vite proxy forwards it unchanged, so the CSRF check in this ADR is exercised exactly as in production and still no CORS headers exist. A missing entry shows up as a 403 on every sign-up, login and create.
 
 ## Context
 

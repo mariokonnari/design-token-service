@@ -1,4 +1,5 @@
 import type { Request } from 'express'
+import type { Logger } from 'pino'
 import request from 'supertest'
 import { createAuthenticate } from '../../src/auth/authenticate'
 import {
@@ -52,6 +53,12 @@ export interface AuthAppOptions {
   tokenDb?: Db
   /** A separate client for the PUBLIC release repository (e.g. one that counts or refuses use). */
   publicDb?: Db
+  /**
+   * Where the app logs. Default: an in-memory capture (`capture`), which GROWS for as
+   * long as the app lives: fine for a test, wrong for a long-running server such as
+   * the web e2e entry, which passes its own bounded logger.
+   */
+  logger?: Logger
 }
 
 /** The real app with the real auth routes, repositories and a REAL database. */
@@ -90,7 +97,9 @@ export async function authApp(db: Db, options: AuthAppOptions = {}) {
   })
 
   const capture = logCapture()
-  const logger = createLogger({ level: 'info', destination: capture.stream })
+  const logger =
+    options.logger ??
+    createLogger({ level: 'info', destination: capture.stream })
   const routes: RouteDef[] = [
     ...buildRouteTable({
       checkReady: () => Promise.resolve(true),
