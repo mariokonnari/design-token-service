@@ -141,7 +141,13 @@ test('logging out clears what was cached: the next person in this tab sees only 
   ).toBeVisible()
 
   // a second person signs up in the same tab, without a reload
+  // Wait for the sign-up PAGE before typing: the router commits a navigation in a
+  // React transition, so for a moment after the click the login form (which has
+  // the same labels) is still in the DOM and would take the email (ADR 0016).
   await page.getByRole('link', { name: /create an account/i }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Create an account' }),
+  ).toBeVisible()
   const second = newUser()
   await page.getByLabel(/^email/i).fill(second.email)
   await page.getByLabel(/^password/i).fill(second.password)

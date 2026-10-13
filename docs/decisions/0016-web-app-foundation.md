@@ -83,6 +83,23 @@ Mutations (each applied to the real code, tests run, file restored with its sha2
 | the proxy path broken (`/api` to `/apix`) | **0 fail** (jsdom cannot see it) | 35 fail, 8 pass |
 | a server message rendered through `dangerouslySetInnerHTML` | 2 fail (source scan, inert-text test) | n/a; **ESLint reports 1 error** |
 
+### Finding: a CI-only e2e failure that looked like lost form input (it was a test race)
+
+**Symptom (GitHub Actions only).** In `session.spec.ts` "logging out clears what was cached", after the second person filled Email and Password and clicked "Create account", the page still showed the sign-up form with "Enter your email address.", Email empty and Password filled.
+
+**First hypothesis, refuted.** The form is unmounted or reset when the `/api/me` check resolves. Reading `GuestOnly`, `RequireAuth`, `useMe` and the router: the only branch that renders something other than the form is `GuestOnly`'s `me.isPending` branch, which renders *no form at all*, so nothing can be typed into it and nothing is lost when it resolves. After a logout `me` is set to `null` (fresh for five minutes), so the in-app link from `/login` to `/signup` makes no `/api/me` request (measured: 0). Two scratch Playwright specs (not kept) delayed `GET /api/me` by 1 s and filled Email right away on `/signup` and on `/login`: both **passed** (the field waits for the form to exist; the value survived the response).
+
+**Actual cause.** `BrowserRouter` commits every navigation inside `React.startTransition` (React Router 8.4.0, `useTransitions` unset). After the click on "create an account" the URL is already `/signup`, but until React commits, the *login* form (same labels: "Email", "Password") is still in the DOM and still accepts input. The test clicked the link and filled at once, so on a slow runner (cold JIT, a render longer than one 5 ms time slice, two workers plus the API, vite and Postgres on 2 cores) the email went into the old login form and was dropped at the commit, while the password went into the new sign-up form. That is exactly the snapshot. It was the only place in the e2e suite that typed straight after a link click; every other click is followed by an assertion on the new page.
+
+**Reproduced deterministically** (scratch spec, an init script that delays every React scheduler task by 300 ms once the login page is up): the original sequence fails with `#signup-email` empty (expected the typed address); the same sequence with a wait for the "Create an account" heading between the click and the first fill passes under the same lag. CPU throttling at 40x did *not* reproduce it, so the lag injection is what proved the mechanism; no trace from the failed CI run was available (the `gh` CLI was not authenticated), so the match rests on the snapshot plus the reproduction, not on a CI trace.
+
+**Fix.** No app change. The test now waits for the "Create an account" heading before it types, like every other navigation in the suite. No retry, sleep, timeout or assertion was changed or weakened.
+
+**Honest limits.**
+- The cause is inferred from the snapshot and a reproduction of the same symptom; it is not proven for the one CI run.
+- A real person cannot realistically type in the few milliseconds between a click and the commit; the app was not changed. If it ever matters, `useTransitions={false}` on `BrowserRouter` would commit navigations synchronously, at the cost of the transition behavior for every route; that was not judged worth it for a test race.
+- Nothing prevents the same race in a future test. The convention is in the e2e rules in CLAUDE.md: after a click that navigates, assert on the new page before filling.
+
 ## Alternatives considered
 
 - **CORS and a separate API origin.** Simpler to start, but it means a cross-site cookie (`SameSite=None; Secure`), a preflight surface and a wider CSRF story. ADR 0013 chose same-origin on purpose.

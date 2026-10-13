@@ -94,6 +94,7 @@ Needs Docker (Desktop) for the local database. First time: `cp apps/api/.env.exa
 - **Server text is only rendered as React children.** ESLint forbids `dangerouslySetInnerHTML`, `innerHTML`/`outerHTML` assignment, `insertAdjacentHTML` and `document.write` in `apps/web`; `describeApiError` decides which server sentences may be shown (a 400 only).
 - Adding a page: a route in `App.tsx` (under `RequireAuth` if it needs a session), `PageHeading` for the single `h1` (it sets the title and moves focus after navigation), a case in `test/pages/accessibility.test.tsx` and in `e2e/accessibility.spec.ts`. Adding a form: `useSubmitForm` (error summary, focus, double-submit guard) and a case in `describeError.test.ts` for any new API error. Styling follows the `@dts/ui` rules (`test/cssRules.test.ts` scans `src/**/*.css`); links use `.link` (underlined, focus ring).
 - A failing e2e test is a finding to fix in the app (or the test if it is wrong), never a reason to add retries or sleeps.
+- **After any navigation, tab or token selection, assert on the new view's heading or a unique element BEFORE typing or clicking inside it.** Forms and views that share labels (Email, Password, Value) can be matched in the old view while a React transition is still pending: the router commits in a transition, so a fill straight after the click can land in the old view and be lost (a CI-only failure of `session.spec.ts`, ADR 0016).
 
 ## Token architecture
 
