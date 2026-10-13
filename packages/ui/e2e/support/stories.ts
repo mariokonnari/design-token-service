@@ -42,8 +42,16 @@ export function storiesOf(component: string): StoryEntry[] {
   return loadStories().filter((s) => s.title === `Components/${component}`)
 }
 
+/**
+ * `a11y.manual:!true` turns off the a11y addon's AUTOMATIC axe run after each story
+ * render (E2E ONLY: `.storybook/preview.tsx` is untouched, so the panel still works in
+ * `storybook dev`). Our AxeBuilder drives the same page's axe, and two overlapping runs
+ * throw "Axe is already running" (ADR 0010). `!true` is Storybook's typed boolean: a
+ * bare `true` arrives as the string "true" and does NOT disable the run.
+ * harness.spec.ts reads the global back, so a renamed global fails loudly.
+ */
 export function storyUrl(id: string, theme: Theme): string {
-  return `iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`
+  return `iframe.html?id=${id}&viewMode=story&globals=theme:${theme};a11y.manual:!true`
 }
 
 /** Test title helper: `components-button--primary [acme]`. */
