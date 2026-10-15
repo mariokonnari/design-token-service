@@ -17,6 +17,7 @@ const ALL_TEXT_DISABLED = new Set([
   'components-checkbox--disabled',
   'components-checkbox--disabled-checked',
   'components-textfield--disabled',
+  'components-select--disabled',
 ])
 
 for (const story of loadStories()) {

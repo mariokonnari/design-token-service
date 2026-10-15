@@ -2,9 +2,16 @@ import type { ApiClient } from './client'
 import type {
   Brand,
   Credentials,
+  DeleteTokenResult,
+  ImportInput,
+  ImportResult,
   NameAndSlug,
   Organization,
+  PutTokenInput,
+  PutTokenResult,
+  TokenList,
   User,
+  ValidationReport,
 } from './types'
 
 /**
@@ -15,6 +22,8 @@ import type {
  */
 export function createEndpoints(client: ApiClient) {
   const enc = encodeURIComponent
+  const tokensBase = (organizationId: string, brandId: string) =>
+    `/api/orgs/${enc(organizationId)}/brands/${enc(brandId)}/tokens`
 
   return {
     async signup(input: Credentials): Promise<User> {
@@ -92,6 +101,68 @@ export function createEndpoints(client: ApiClient) {
         { name: input.name, slug: input.slug },
       )
       return reply.brand
+    },
+
+    listTokens(
+      organizationId: string,
+      brandId: string,
+      options?: { signal?: AbortSignal },
+    ): Promise<TokenList> {
+      return client.get<TokenList>(tokensBase(organizationId, brandId), options)
+    },
+
+    /** Create (no `expectedVersion`) or update (with it). The body is rebuilt from named fields. */
+    putToken(
+      organizationId: string,
+      brandId: string,
+      input: PutTokenInput,
+    ): Promise<PutTokenResult> {
+      return client.put<PutTokenResult>(
+        `${tokensBase(organizationId, brandId)}/${enc(input.path)}`,
+        {
+          ...(input.type === undefined ? {} : { type: input.type }),
+          value: input.value,
+          ...(input.description === undefined
+            ? {}
+            : { description: input.description }),
+          ...(input.expectedVersion === undefined
+            ? {}
+            : { expectedVersion: input.expectedVersion }),
+        },
+      )
+    },
+
+    deleteToken(
+      organizationId: string,
+      brandId: string,
+      path: string,
+      expectedVersion: number,
+    ): Promise<DeleteTokenResult> {
+      return client.del<DeleteTokenResult>(
+        `${tokensBase(organizationId, brandId)}/${enc(path)}?expectedVersion=${enc(String(expectedVersion))}`,
+      )
+    },
+
+    validateDraft(
+      organizationId: string,
+      brandId: string,
+      options?: { signal?: AbortSignal },
+    ): Promise<ValidationReport> {
+      return client.get<ValidationReport>(
+        `/api/orgs/${enc(organizationId)}/brands/${enc(brandId)}/validate`,
+        options,
+      )
+    },
+
+    importTokens(
+      organizationId: string,
+      brandId: string,
+      input: ImportInput,
+    ): Promise<ImportResult> {
+      return client.post<ImportResult>(
+        `${tokensBase(organizationId, brandId)}/import`,
+        { tree: input.tree, expectedRevision: input.expectedRevision },
+      )
     },
   }
 }

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./themes.css": "./src/themes.generated.css"
+    "./themes.css": "./src/themes.generated.css",
+    "./tokens/default.tokens.json": "./tokens/default.tokens.json"
   },
   "scripts": {
     "generate:theme": "tsx scripts/build-theme.ts",

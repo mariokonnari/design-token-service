@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { GENERATED_CSS_PATH } from '../scripts/lib/buildThemes'
+import { GENERATED_CSS_PATH, TOKENS_DIR } from '../scripts/lib/buildThemes'
 
 const root = join(import.meta.dirname, '..')
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
@@ -16,6 +16,7 @@ describe('@dts/ui package.json', () => {
     expect(pkg.exports).toEqual({
       '.': './src/index.ts',
       './themes.css': './src/themes.generated.css',
+      './tokens/default.tokens.json': './tokens/default.tokens.json',
     })
   })
 
@@ -30,6 +31,18 @@ describe('@dts/ui package.json', () => {
     expect(relative(root, GENERATED_CSS_PATH).replaceAll('\\', '/')).toBe(
       pkg.exports['./themes.css']?.replace('./', ''),
     )
+  })
+
+  it('exports the starter token file: the same file the theme generator reads, valid JSON, with the three tiers', () => {
+    const target = pkg.exports['./tokens/default.tokens.json']
+    expect(target).toBeDefined()
+    expect(join(root, target ?? '')).toBe(
+      join(TOKENS_DIR, 'default.tokens.json'),
+    )
+    const tree = JSON.parse(
+      readFileSync(join(root, target ?? ''), 'utf8'),
+    ) as Record<string, unknown>
+    expect(Object.keys(tree)).toEqual(['primitive', 'semantic', 'component'])
   })
 
   it('uses tokens-core only as a devDependency (build and test time), never at runtime', () => {

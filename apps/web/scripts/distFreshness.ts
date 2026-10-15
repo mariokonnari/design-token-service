@@ -9,7 +9,7 @@ import { join, relative } from 'node:path'
  * bundle (ADR 0016). "Newer" is strict: a source with exactly the build's time is
  * fine. Inputs: src/, public/, index.html, package.json, vite.config.ts of this
  * app, plus the sources of the two workspace packages the bundle includes
- * (packages/ui/src, packages/tokens-core/src) when they exist next to it.
+ * (packages/ui/src, packages/ui/tokens, packages/tokens-core/src) when they exist next to it.
  */
 
 export type Freshness = { ok: true } | { ok: false; message: string }
@@ -18,6 +18,8 @@ const FILES = ['index.html', 'package.json', 'vite.config.ts']
 const DIRECTORIES = ['src', 'public']
 const WORKSPACE_DIRECTORIES = [
   ['..', '..', 'packages', 'ui', 'src'],
+  // The starter token file is bundled into the editor (ADR 0017).
+  ['..', '..', 'packages', 'ui', 'tokens'],
   ['..', '..', 'packages', 'tokens-core', 'src'],
 ]
 const MAX_LISTED = 5

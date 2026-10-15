@@ -25,6 +25,8 @@ describe('public API', () => {
         'splitPath',
         'tierOf',
         'toCssVariables',
+        'tokenFromParts',
+        'tokenToParts',
         'toHex',
         'toResolvedTree',
         'validateLiteral',

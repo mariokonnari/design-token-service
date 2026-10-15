@@ -51,6 +51,9 @@ export interface RequestOptions {
 export interface ApiClient {
   get<T>(path: string, options?: RequestOptions): Promise<T>
   post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>
+  put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>
+  /** `del`: `delete` is a reserved word. A DELETE carries no body (the version travels in the query). */
+  del<T>(path: string, options?: RequestOptions): Promise<T>
 }
 
 export interface ApiClientOptions {
@@ -114,7 +117,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     options.fetch ?? ((input, init) => globalThis.fetch(input, init))
 
   async function send<T>(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     body: unknown,
     requestOptions: RequestOptions | undefined,
@@ -185,5 +188,9 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     get: (path, requestOptions) => send('GET', path, undefined, requestOptions),
     post: (path, body, requestOptions) =>
       send('POST', path, body, requestOptions),
+    put: (path, body, requestOptions) =>
+      send('PUT', path, body, requestOptions),
+    del: (path, requestOptions) =>
+      send('DELETE', path, undefined, requestOptions),
   }
 }

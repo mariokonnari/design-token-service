@@ -1,10 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import {
-  describeViolations,
-  evaluatedNodes,
-  incompleteNodes,
-  runAxe,
-} from './support/axe'
+import { expectNoViolations } from './support/axe'
 import {
   createBrandViaApi,
   createOrgViaApi,
@@ -18,24 +13,6 @@ import {
 // styling that does not depend on color alone, and focus visibility. Not covered:
 // screen readers, hover states, forced colors and reduced motion on these pages,
 // other browsers (ADR 0016).
-
-async function expectNoViolations(page: Page, what: string): Promise<void> {
-  const results = await runAxe(page)
-  expect(
-    results.violations.length,
-    `${what}\n${describeViolations(results)}`,
-  ).toBe(0)
-  // "incomplete" means axe could not decide: a contrast failure could hide there
-  expect(
-    incompleteNodes(results, 'color-contrast'),
-    `${what}: axe could not decide color-contrast for some nodes`,
-  ).toBe(0)
-  // not vacuous: contrast was really measured on this page
-  expect(
-    evaluatedNodes(results, 'color-contrast'),
-    `${what}: no text was evaluated`,
-  ).toBeGreaterThan(0)
-}
 
 test.describe('axe (wcag2a, wcag2aa, wcag21aa, wcag22aa)', () => {
   test('login', async ({ page }) => {
@@ -73,7 +50,7 @@ test.describe('axe (wcag2a, wcag2aa, wcag21aa, wcag22aa)', () => {
     await expectNoViolations(page, 'brand list')
   })
 
-  test('brand placeholder page', async ({ page }) => {
+  test('brand page (empty draft)', async ({ page }) => {
     await signUpViaApi(page)
     const org = await createOrgViaApi(page, 'Initech')
     const brand = await createBrandViaApi(page, org.id, 'Summit')

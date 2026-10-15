@@ -19,6 +19,8 @@ export {
   splitPath,
 } from './names'
 export type { AliasParse } from './names'
+export { tokenFromParts, tokenToParts } from './rows'
+export type { TokenFromParts, TokenParts } from './rows'
 export { resolve } from './resolve'
 export type { ResolveOptions, ResolveResult } from './resolve'
 export { TIERS, checkTiers, tierOf } from './tiers'

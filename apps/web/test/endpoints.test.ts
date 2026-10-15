@@ -12,6 +12,18 @@ function recorder(reply: unknown = {}) {
       calls.push({ method: 'GET', path })
       return Promise.resolve(reply as never)
     },
+    put: (path, body) => {
+      calls.push({
+        method: 'PUT',
+        path,
+        ...(body === undefined ? {} : { body }),
+      })
+      return Promise.resolve(reply as never)
+    },
+    del: (path) => {
+      calls.push({ method: 'DELETE', path })
+      return Promise.resolve(reply as never)
+    },
     post: (path, body) => {
       calls.push({
         method: 'POST',
@@ -98,5 +110,115 @@ describe('endpoints', () => {
     const withExtra = { name: 'A', slug: 'a', role: 'OWNER' }
     await api.createOrganization(withExtra)
     expect(calls[0]?.body).toEqual({ name: 'A', slug: 'a' })
+  })
+
+  describe('draft tokens (ADR 0014)', () => {
+    const TOKENS = `/api/orgs/${ORG}/brands/${BRAND}/tokens`
+
+    it('listTokens is a GET and returns the whole envelope', async () => {
+      const reply = { draftRevision: 3, tokens: [] }
+      const { api, calls } = recorder(reply)
+      expect(await api.listTokens(ORG, BRAND)).toEqual(reply)
+      expect(calls).toEqual([{ method: 'GET', path: TOKENS }])
+    })
+
+    it('putToken creates WITHOUT an expectedVersion key and with named fields only', async () => {
+      const { api, calls } = recorder({
+        token: {},
+        draftRevision: 1,
+        warnings: [],
+      })
+      await api.putToken(ORG, BRAND, {
+        path: 'primitive.color.blue',
+        type: 'color',
+        value: { colorSpace: 'srgb', components: [0, 0, 1] },
+        description: 'Blue',
+        // @ts-expect-error a stray property must never reach the strict API body
+        role: 'OWNER',
+      })
+      expect(calls).toEqual([
+        {
+          method: 'PUT',
+          path: `${TOKENS}/primitive.color.blue`,
+          body: {
+            type: 'color',
+            value: { colorSpace: 'srgb', components: [0, 0, 1] },
+            description: 'Blue',
+          },
+        },
+      ])
+      expect(Object.keys(calls[0]?.body as object)).not.toContain(
+        'expectedVersion',
+      )
+    })
+
+    it('putToken updates WITH expectedVersion, and leaves out type and description when not given (an alias)', async () => {
+      const { api, calls } = recorder({
+        token: {},
+        draftRevision: 2,
+        warnings: [],
+      })
+      await api.putToken(ORG, BRAND, {
+        path: 'semantic.color.action',
+        value: '{primitive.color.blue}',
+        expectedVersion: 7,
+      })
+      expect(calls[0]?.body).toEqual({
+        value: '{primitive.color.blue}',
+        expectedVersion: 7,
+      })
+    })
+
+    it('deleteToken sends the version in the QUERY, never in a body', async () => {
+      const { api, calls } = recorder({ draftRevision: 4 })
+      expect(await api.deleteToken(ORG, BRAND, 'a.b', 3)).toEqual({
+        draftRevision: 4,
+      })
+      expect(calls).toEqual([
+        { method: 'DELETE', path: `${TOKENS}/a.b?expectedVersion=3` },
+      ])
+    })
+
+    it('encodes the token path and the version so a hostile value cannot change the route', async () => {
+      const { api, calls } = recorder({
+        token: {},
+        draftRevision: 1,
+        warnings: [],
+      })
+      await api.putToken(ORG, BRAND, { path: '../x?y#z', value: 1 })
+      await api.deleteToken(ORG, BRAND, 'a/b', 1)
+      expect(calls[0]?.path).toBe(`${TOKENS}/..%2Fx%3Fy%23z`)
+      expect(calls[1]?.path).toBe(`${TOKENS}/a%2Fb?expectedVersion=1`)
+    })
+
+    it('validateDraft is a GET under the brand, not under /tokens', async () => {
+      const reply = { draftRevision: 3, publishable: true, issues: [] }
+      const { api, calls } = recorder(reply)
+      expect(await api.validateDraft(ORG, BRAND)).toEqual(reply)
+      expect(calls).toEqual([
+        { method: 'GET', path: `/api/orgs/${ORG}/brands/${BRAND}/validate` },
+      ])
+    })
+
+    it('importTokens POSTs exactly {tree, expectedRevision}', async () => {
+      const { api, calls } = recorder({
+        draftRevision: 5,
+        count: 2,
+        warnings: [],
+      })
+      await api.importTokens(ORG, BRAND, {
+        tree: { primitive: {} },
+        expectedRevision: 4,
+        // @ts-expect-error a stray property must never reach the strict API body
+        extra: true,
+      })
+      expect(calls).toEqual([
+        {
+          method: 'POST',
+          path: `${TOKENS}/import`,
+          body: { tree: { primitive: {} }, expectedRevision: 4 },
+        },
+      ])
+    })
   })
 })

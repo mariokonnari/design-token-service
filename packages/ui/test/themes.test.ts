@@ -133,6 +133,7 @@ describe('buildThemes', () => {
         '--component-button-radius',
         '--component-checkbox-accent',
         '--component-textfield-radius',
+        '--component-select-radius',
         '--component-alert-radius',
         '--component-tabs-indicator',
         '--component-dialog-radius',

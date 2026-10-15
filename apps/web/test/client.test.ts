@@ -87,6 +87,45 @@ describe('requests', () => {
     expect(new Headers(call?.init.headers).has('content-type')).toBe(false)
   })
 
+  it('PUT with a body: JSON content-type and a JSON string', async () => {
+    const { fetch, calls } = fakeFetch(() => json(200, { ok: true }))
+    await createApiClient({ fetch }).put('/api/orgs/o/brands/b/tokens/a.b', {
+      value: 1,
+    })
+    const [call] = calls
+    expect(call?.init.method).toBe('PUT')
+    expect(call?.init.body).toBe('{"value":1}')
+    expect(new Headers(call?.init.headers).get('content-type')).toBe(
+      'application/json',
+    )
+    expect(call?.init.credentials).toBe('same-origin')
+  })
+
+  it('DELETE sends no body and no content-type, and keeps the query string', async () => {
+    const { fetch, calls } = fakeFetch(() => json(200, { draftRevision: 2 }))
+    await expect(
+      createApiClient({ fetch }).del(
+        '/api/orgs/o/brands/b/tokens/a.b?expectedVersion=3',
+      ),
+    ).resolves.toEqual({ draftRevision: 2 })
+    const [call] = calls
+    expect(call?.url).toBe('/api/orgs/o/brands/b/tokens/a.b?expectedVersion=3')
+    expect(call?.init.method).toBe('DELETE')
+    expect(call?.init.body).toBeUndefined()
+    expect(new Headers(call?.init.headers).has('content-type')).toBe(false)
+  })
+
+  it('a 401 on PUT or DELETE is the one auth-expired signal', async () => {
+    const onAuthExpired = vi.fn()
+    const { fetch } = fakeFetch(() =>
+      json(401, { error: { code: 'UNAUTHENTICATED', message: 'no' } }),
+    )
+    const client = createApiClient({ fetch, onAuthExpired })
+    await caught(client.put('/api/orgs/o/brands/b/tokens/a', { value: 1 }))
+    await caught(client.del('/api/orgs/o/brands/b/tokens/a?expectedVersion=1'))
+    expect(onAuthExpired).toHaveBeenCalledTimes(2)
+  })
+
   it('passes an abort signal through (TanStack Query cancels with it)', async () => {
     const { fetch, calls } = fakeFetch(() => json(200, {}))
     const controller = new AbortController()

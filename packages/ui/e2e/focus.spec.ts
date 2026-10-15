@@ -22,6 +22,12 @@ const TARGETS: Target[] = [
     selector: '.dts-textfield__input',
   },
   {
+    name: 'Select',
+    story: 'components-select--default',
+    allStory: 'components-select--all',
+    selector: '.dts-select__control',
+  },
+  {
     name: 'Checkbox input',
     story: 'components-checkbox--default',
     allStory: 'components-checkbox--all',

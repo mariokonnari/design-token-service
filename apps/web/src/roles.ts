@@ -12,3 +12,8 @@ export function visibilityLabel(visibility: Visibility): string {
 export function canCreateBrands(role: Role): boolean {
   return role === 'OWNER' || role === 'EDITOR'
 }
+
+/** Who may change draft tokens (the API repeats this check: EDITOR or higher). */
+export function canEditTokens(role: Role): boolean {
+  return role === 'OWNER' || role === 'EDITOR'
+}

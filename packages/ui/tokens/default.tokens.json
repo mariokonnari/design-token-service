@@ -806,6 +806,92 @@
         }
       }
     },
+    "select": {
+      "bg": {
+        "$value": "{semantic.color.surface}"
+      },
+      "text": {
+        "$value": "{semantic.color.text}"
+      },
+      "border": {
+        "$value": "{semantic.color.input-border}"
+      },
+      "border-invalid": {
+        "$value": "{semantic.color.danger.border}"
+      },
+      "bg-disabled": {
+        "$value": "{semantic.color.surface-disabled}"
+      },
+      "text-disabled": {
+        "$value": "{semantic.color.text-disabled}"
+      },
+      "border-disabled": {
+        "$value": "{semantic.color.surface-disabled}"
+      },
+      "label-text": {
+        "$value": "{semantic.color.text}"
+      },
+      "description-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "required-text": {
+        "$value": "{semantic.color.text-muted}"
+      },
+      "error-text": {
+        "$value": "{semantic.color.danger.text}"
+      },
+      "radius": {
+        "$value": "{semantic.radius.control}"
+      },
+      "border-width": {
+        "$value": "{semantic.border.width.control}"
+      },
+      "padding-x": {
+        "$value": "{semantic.space.inset-sm}"
+      },
+      "padding-y": {
+        "$value": "{semantic.space.inset-xs}"
+      },
+      "min-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 36,
+          "unit": "px"
+        }
+      },
+      "gap": {
+        "$value": "{semantic.space.gap-sm}"
+      },
+      "font-family": {
+        "$value": "{semantic.font.family.sans}"
+      },
+      "font-size": {
+        "$value": "{semantic.font.size.md}"
+      },
+      "description-size": {
+        "$value": "{semantic.font.size.sm}"
+      },
+      "label-weight": {
+        "$value": "{semantic.font.weight.control}"
+      },
+      "icon-size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16,
+          "unit": "px"
+        }
+      },
+      "focus-ring-width": {
+        "$value": "{semantic.border.width.focus}"
+      },
+      "focus-ring-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "px"
+        }
+      }
+    },
     "checkbox": {
       "accent": {
         "$value": "{semantic.color.action.primary}"

@@ -1,24 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import { e2eDatabaseUrl } from './e2e/support/database'
 import { API_ORIGIN, API_PORT, WEB_ORIGIN, WEB_PORT } from './e2e/support/ports'
 
 const isCI = Boolean(process.env['CI'])
 
-/**
- * The database the suite uses: its OWN (`dts_e2e_test`), on the same server as the
- * API tests' `dts_test`, so the two suites never share tables. Derived from
- * DATABASE_URL (CI sets it to the service container) or the local compose default;
- * E2E_DATABASE_URL overrides. The API entry refuses any name not ending in `_test`.
- */
-function e2eDatabaseUrl(): string {
-  const explicit = process.env['E2E_DATABASE_URL']
-  if (explicit !== undefined && explicit !== '') return explicit
-  const url = new URL(
-    process.env['DATABASE_URL'] ||
-      'postgresql://dts:dts@localhost:5433/dts_test',
-  )
-  url.pathname = '/dts_e2e_test'
-  return url.toString()
-}
+// The workers (and the Viewer helper) must use the SAME database as the API below.
+process.env['E2E_DATABASE_URL'] = e2eDatabaseUrl()
 
 /**
  * Real-stack browser tests (ADR 0016): Chromium -> the BUILT web bundle served by

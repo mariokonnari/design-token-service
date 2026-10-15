@@ -185,24 +185,29 @@ describe('brand list', () => {
   })
 })
 
-describe('brand page (placeholder for the editor)', () => {
+describe('brand page (the editor lives in test/pages/editor.test.tsx)', () => {
   const brandPath = `/api/orgs/${acme.id}/brands/${summit.id}`
   const route = `/orgs/${acme.id}/brands/${summit.id}`
 
-  it('shows the brand and says the editor is coming in 4b', async () => {
+  it('shows the brand, the editor and a way back', async () => {
     renderApp({
       route,
       handlers: {
         ...SIGNED_IN,
         'GET /api/orgs': { body: { organizations: [acme] } },
         [`GET ${brandPath}`]: { body: { brand: summit } },
+        [`GET ${brandPath}/tokens`]: { body: { draftRevision: 0, tokens: [] } },
       },
     })
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Summit' }),
     ).toBeVisible()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(screen.getByText(/editor coming in 4b/i)).toBeVisible()
+    expect(
+      await screen.findByRole('button', {
+        name: 'Start from the default theme',
+      }),
+    ).toBeVisible()
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(crumbs).getByRole('link', { name: 'Acme' })).toHaveAttribute(
       'href',

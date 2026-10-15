@@ -76,3 +76,7 @@ A `dts-visually-hidden` utility class (no colors) is shared by `TextField` and `
 - **A breaking token change:** `semantic.color.danger` no longer exists as a leaf, so anything that referenced it must use `semantic.color.danger.text` (or the surface or border).
 - **More tokens and CSS to maintain:** the exported variables per theme grew from 47 to 120, so the generated CSS file is much larger, and a longer registry.
 - **The palette is still a first choice** (blue, green, amber and red status colors chosen for contrast), not validated by a designer, and the icons are simple shapes drawn for this library.
+
+## Addendum (Phase 4b, ADR 0017): `Select`
+
+`Select` follows the TextField decisions above: a required `label` (a real `<label for>`, `useId`), `description` and `error` linked with `aria-describedby`, `aria-invalid` only while there is an error, a visible aria-hidden "(required)" hint and a visually hidden "Error: " prefix, both overridable (no translations), ref as a prop. It is a **native** `<select>` (the arrow and the popup stay the platform's, `appearance: auto`), with component tokens only (`component.select.*`, 24 tokens aliasing the same semantic tokens as `textfield`), so its contrast ratios equal TextField's and its pairs are registered in `test/contrastPairs.ts`. A disabled `Select` joins the "all text belongs to a disabled control" axe allowance, like a disabled TextField.

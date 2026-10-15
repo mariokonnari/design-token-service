@@ -24,6 +24,7 @@ const COMPONENTS = [
   'Button',
   'Checkbox',
   'Dialog',
+  'Select',
   'Tabs',
   'TextField',
 ]
@@ -185,6 +186,33 @@ for (const component of COMPONENTS) {
           }
         }
 
+        if (component === 'Select') {
+          const valid =
+            '.dts-select__control:not(:disabled):not([aria-invalid=true])'
+          if (await has(valid)) {
+            await expectDrawnBorder(page, valid, 'CanvasText', 'Select')
+          }
+          const invalid = '.dts-select__control[aria-invalid=true]'
+          if (await has(invalid)) {
+            await expectDrawnBorder(
+              page,
+              invalid,
+              'Highlight',
+              'invalid Select',
+            )
+          }
+          if (await has('.dts-select__control:disabled')) {
+            const gray = await systemColor(page, 'GrayText')
+            for (const i of await computed(
+              page,
+              '.dts-select__control:disabled',
+            )) {
+              expect(i.color, 'disabled Select text').toBe(gray)
+              expect(i.borderStyle).not.toBe('none')
+            }
+          }
+        }
+
         if (component === 'Checkbox') {
           // The box is drawn by the browser; our rule tints it with Highlight.
           const highlight = await systemColor(page, 'Highlight')
@@ -271,6 +299,7 @@ for (const component of COMPONENTS) {
 const FOCUS_TARGETS = [
   ['components-button--primary', '.dts-button'],
   ['components-textfield--default', '.dts-textfield__input'],
+  ['components-select--default', '.dts-select__control'],
   ['components-checkbox--default', '.dts-checkbox__input'],
   ['components-tabs--default', '.dts-tabs__tab[aria-selected=true]'],
 ] as const

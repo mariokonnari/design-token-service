@@ -4,11 +4,11 @@ import { NotFoundBlock } from '../components/NotFoundBlock'
 import { PageHeading } from '../components/PageHeading'
 import { Loading, QueryError } from '../components/QueryError'
 import { useBrand, useOrganizations } from '../queries'
-import { visibilityLabel } from '../roles'
+import { Editor } from '../components/editor/Editor'
 
 const MISSING = 'This brand does not exist, or you cannot see it.'
 
-/** The place the token editor will go (Phase 4b). For now: the brand and a way back. */
+/** A brand: its breadcrumb and the Theme Editor (ADR 0017). Unknown and foreign brands are the same "not found" page (ADR 0016). */
 export function BrandPage() {
   const { orgId = '', brandId = '' } = useParams()
   const orgs = useOrganizations()
@@ -46,7 +46,7 @@ export function BrandPage() {
 
   const { data } = brand
   return (
-    <div className="page">
+    <div className="page page--wide">
       <nav aria-label="Breadcrumb" className="breadcrumb">
         <ol>
           <li>
@@ -63,21 +63,7 @@ export function BrandPage() {
         </ol>
       </nav>
       <PageHeading title={data.name} />
-      <p>Token editor coming in 4b. For now this page only shows the brand.</p>
-      <dl className="details">
-        <div>
-          <dt>Slug</dt>
-          <dd>{data.slug}</dd>
-        </div>
-        <div>
-          <dt>Visibility</dt>
-          <dd>{visibilityLabel(data.visibility)}</dd>
-        </div>
-        <div>
-          <dt>Draft revision</dt>
-          <dd>{data.draftRevision}</dd>
-        </div>
-      </dl>
+      <Editor org={org} brand={data} />
     </div>
   )
 }

@@ -14,6 +14,15 @@ const EXPECTED: Record<string, string[]> = {
     'WithPlaceholder',
     'All',
   ],
+  Select: [
+    'Default',
+    'WithDescription',
+    'WithError',
+    'Required',
+    'Disabled',
+    'LongOptionText',
+    'All',
+  ],
   Checkbox: [
     'Default',
     'Checked',

@@ -203,6 +203,60 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     SURFACE,
   ),
 
+  // Select: same structure as TextField (native control, no placeholder). Its
+  // own text sits on the control background; the label, description, required
+  // hint and error sit on the page surface.
+  text(
+    'Select',
+    'control text on control background',
+    'component.select.text',
+    'component.select.bg',
+  ),
+  text('Select', 'label on surface', 'component.select.label-text', SURFACE),
+  text(
+    'Select',
+    'description on surface',
+    'component.select.description-text',
+    SURFACE,
+  ),
+  text(
+    'Select',
+    'required hint on surface',
+    'component.select.required-text',
+    SURFACE,
+  ),
+  text(
+    'Select',
+    'error text on surface',
+    'component.select.error-text',
+    SURFACE,
+  ),
+  nonText('Select', 'border on surface', 'component.select.border', SURFACE),
+  nonText(
+    'Select',
+    'border on control background',
+    'component.select.border',
+    'component.select.bg',
+  ),
+  nonText(
+    'Select',
+    'invalid border on surface',
+    'component.select.border-invalid',
+    SURFACE,
+  ),
+  nonText(
+    'Select',
+    'invalid border on control background',
+    'component.select.border-invalid',
+    'component.select.bg',
+  ),
+  nonText(
+    'Select',
+    'focus-ring on surface',
+    'semantic.color.focus-ring',
+    SURFACE,
+  ),
+
   // Checkbox: the label and description sit on the page surface.
   text(
     'Checkbox',

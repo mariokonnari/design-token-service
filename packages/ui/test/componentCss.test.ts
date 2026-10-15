@@ -33,6 +33,7 @@ describe('component stylesheets', () => {
       'Button/Button.css',
       'Checkbox/Checkbox.css',
       'Dialog/Dialog.css',
+      'Select/Select.css',
       'Tabs/Tabs.css',
       'TextField/TextField.css',
     ])
@@ -63,6 +64,7 @@ describe('forced-colors keeps borders visible where background colors are droppe
     'Alert/Alert.css',
     'Button/Button.css',
     'Dialog/Dialog.css',
+    'Select/Select.css',
     'Tabs/Tabs.css',
   ])('%s sets a border color with a system color keyword', (name) => {
     const properties = forcedColorsProperties(byName(name))

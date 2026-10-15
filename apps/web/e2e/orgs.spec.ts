@@ -80,7 +80,7 @@ test('a 64-character slug is refused in the browser (63 is the limit), 63 is acc
   await expect(page.getByRole('link', { name: 'Long' })).toBeVisible()
 })
 
-test('creating a brand: list, confirmation, and the placeholder page', async ({
+test('creating a brand: list, confirmation, and the editor page', async ({
   page,
 }) => {
   await signUpViaApi(page)
@@ -104,7 +104,9 @@ test('creating a brand: list, confirmation, and the placeholder page', async ({
   await expect(
     page.getByRole('heading', { level: 1, name: 'Summit' }),
   ).toBeFocused()
-  await expect(page.getByText(/editor coming in 4b/i)).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Start from the default theme' }),
+  ).toBeVisible()
   await expect(page).toHaveURL(
     new RegExp(`/orgs/${org.id}/brands/[0-9a-f-]{36}$`),
   )

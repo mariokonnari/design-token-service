@@ -110,3 +110,58 @@ describe('checkDistFresh', () => {
     expect(result.ok).toBe(false)
   })
 })
+
+describe('checkDistFresh: workspace packages the bundle includes', () => {
+  // A throwaway monorepo: <tmp>/apps/web is the app, <tmp>/packages/* its siblings.
+  let repo = ''
+  let app = ''
+  beforeEach(() => {
+    repo = mkdtempSync(join(tmpdir(), 'dts-fresh-mono-'))
+    app = join(repo, 'apps', 'web')
+  })
+  afterEach(() => {
+    rmSync(repo, { recursive: true, force: true })
+  })
+
+  function putIn(base: string, relative: string, mtimeMs: number) {
+    const file = join(base, relative)
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(file, 'x')
+    utimesSync(file, new Date(mtimeMs), new Date(mtimeMs))
+  }
+
+  function monorepo(extra: Record<string, number> = {}) {
+    const old = T0 - 60 * SECOND
+    for (const file of [
+      'src/main.tsx',
+      'index.html',
+      'package.json',
+      'vite.config.ts',
+    ])
+      putIn(app, file, old)
+    putIn(repo, 'packages/ui/src/index.ts', old)
+    putIn(repo, 'packages/ui/tokens/default.tokens.json', old)
+    putIn(repo, 'packages/tokens-core/src/index.ts', old)
+    for (const [file, mtime] of Object.entries(extra)) putIn(repo, file, mtime)
+    putIn(app, 'dist/index.html', T0)
+  }
+
+  it('passes when the build is newer than the ui sources and the starter tokens', () => {
+    monorepo()
+    expect(checkDistFresh(app)).toEqual({ ok: true })
+  })
+
+  it.each([
+    'packages/ui/src/index.ts',
+    'packages/tokens-core/src/index.ts',
+    'packages/ui/tokens/default.tokens.json',
+  ])(
+    'fails when %s is newer than the build (the starter JSON is bundled into the app)',
+    (file) => {
+      monorepo({ [file]: T0 + 5 * SECOND })
+      const result = checkDistFresh(app)
+      expect(result.ok).toBe(false)
+      expect(result.ok === false && result.message).toContain('../../' + file)
+    },
+  )
+})

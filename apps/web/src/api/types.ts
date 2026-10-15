@@ -42,3 +42,64 @@ export interface NameAndSlug {
   name: string
   slug: string
 }
+
+/** A draft token as GET /tokens sends it. `value` is raw JSON: an alias is "{a.b}" with `type: null`; a corrupt stored row comes back raw too. */
+export interface ServerToken {
+  path: string
+  type: string | null
+  value: unknown
+  description: string | null
+  version: number
+  updatedAt: string
+}
+
+export interface TokenList {
+  draftRevision: number
+  tokens: ServerToken[]
+}
+
+/** An issue as the API sends it (fixed fields; `related` lists other paths). */
+export interface ApiIssue {
+  code: string
+  severity: 'error' | 'warning'
+  path: string
+  field?: string
+  message: string
+  related?: string[]
+}
+
+/** The body of PUT /tokens/:path (`path` goes in the URL). `expectedVersion` is omitted when creating. */
+export interface PutTokenInput {
+  path: string
+  type?: string
+  value: unknown
+  description?: string
+  expectedVersion?: number
+}
+
+export interface PutTokenResult {
+  token: ServerToken
+  draftRevision: number
+  warnings: ApiIssue[]
+}
+
+export interface DeleteTokenResult {
+  draftRevision: number
+}
+
+export interface ValidationReport {
+  draftRevision: number
+  publishable: boolean
+  issues: ApiIssue[]
+}
+
+export interface ImportInput {
+  tree: unknown
+  expectedRevision: number
+}
+
+export interface ImportResult {
+  draftRevision: number
+  count: number
+  warnings: ApiIssue[]
+}

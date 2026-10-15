@@ -139,3 +139,96 @@ export function describeApiError(
     ...(error.requestId === undefined ? {} : { requestId: error.requestId }),
   }
 }
+
+/**
+ * What a failed token write, delete or import means for the editor (ADR 0017).
+ * Pure. Like describeApiError, server sentences are NOT passed through, with one
+ * exception: the issue messages of a 400, which the API builds from fixed text and
+ * which are rendered as React text only.
+ */
+export type TokenFailure =
+  | { kind: 'conflict'; currentVersion: number | undefined }
+  | { kind: 'gone' }
+  | { kind: 'pathConflict'; conflictsWith: string | undefined }
+  | { kind: 'limit' }
+  | { kind: 'revisionConflict' }
+  | {
+      kind: 'invalid'
+      issues: { field?: string; message: string }[]
+      issueCount: number
+    }
+  | { kind: 'other'; form: string; requestId?: string }
+
+const PLAIN_PATH = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/
+
+function positiveInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0
+    ? value
+    : undefined
+}
+
+function issuesOf(
+  details: Readonly<Record<string, unknown>> | undefined,
+): { field?: string; message: string }[] | undefined {
+  const raw = details?.['issues']
+  if (!Array.isArray(raw)) return undefined
+  const issues: { field?: string; message: string }[] = []
+  for (const entry of raw as unknown[]) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const { field, message } = entry as Record<string, unknown>
+    if (typeof message !== 'string' || message === '') continue
+    issues.push(typeof field === 'string' ? { field, message } : { message })
+  }
+  return issues.length === 0 ? undefined : issues
+}
+
+export function describeTokenError(error: unknown): TokenFailure {
+  if (error instanceof ApiError && error.status === 409) {
+    const { code, details } = error
+    if (code === 'VERSION_CONFLICT' || code === 'VERSION_REQUIRED') {
+      if (details?.['currentVersion'] === null) return { kind: 'gone' }
+      return {
+        kind: 'conflict',
+        currentVersion: positiveInteger(details?.['currentVersion']),
+      }
+    }
+    if (code === 'PATH_CONFLICT') {
+      const other = details?.['conflictsWith']
+      return {
+        kind: 'pathConflict',
+        conflictsWith:
+          typeof other === 'string' && PLAIN_PATH.test(other)
+            ? other
+            : undefined,
+      }
+    }
+    if (code === 'TOKEN_LIMIT') return { kind: 'limit' }
+    if (code === 'REVISION_CONFLICT') return { kind: 'revisionConflict' }
+  }
+  if (error instanceof ApiError && error.status === 400) {
+    const issues = issuesOf(error.details)
+    if (issues !== undefined) {
+      const total = error.details?.['issueCount']
+      return {
+        kind: 'invalid',
+        issues,
+        issueCount: positiveInteger(total) ?? issues.length,
+      }
+    }
+  }
+  if (error instanceof ApiError && error.status === 404) {
+    return {
+      kind: 'other',
+      form: 'This token or brand cannot be found, or you no longer have access to it.',
+    }
+  }
+  // Shared wording for everything else (403, 429, 503, network, unknown).
+  const described = describeApiError(error, 'createBrand')
+  return {
+    kind: 'other',
+    form: described.form ?? GENERIC_MESSAGE,
+    ...(described.requestId === undefined
+      ? {}
+      : { requestId: described.requestId }),
+  }
+}

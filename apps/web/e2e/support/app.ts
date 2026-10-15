@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { expect, type Page } from '@playwright/test'
 import { WEB_ORIGIN } from './ports'
 
@@ -122,4 +123,47 @@ export async function createBrandViaUi(
 export async function sessionCookie(page: Page) {
   const cookies = await page.context().cookies()
   return cookies.find((cookie) => cookie.name === 'dts_session')
+}
+
+/** The library's own token file (the editor's "default theme" template), as the import endpoint takes it. */
+export function readStarterTree(): Record<string, unknown> {
+  const file = new URL(
+    '../../../../packages/ui/tokens/default.tokens.json',
+    import.meta.url,
+  )
+  return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>
+}
+
+/** Fills a brand's draft with the default theme through the API (fast). Returns the count. */
+export async function importStarterViaApi(
+  page: Page,
+  orgId: string,
+  brandId: string,
+  expectedRevision = 0,
+): Promise<number> {
+  const response = await page
+    .context()
+    .request.post(`/api/orgs/${orgId}/brands/${brandId}/tokens/import`, {
+      data: { tree: readStarterTree(), expectedRevision },
+      headers: ORIGIN_HEADER,
+    })
+  expect(response.status(), await response.text()).toBe(200)
+  return ((await response.json()) as { count: number }).count
+}
+
+/** A signed-up user with an organization and an (empty) brand; the session cookie is in this page's context. */
+export async function setUpBrand(page: Page, orgName = 'Editor Co') {
+  const user = await signUpViaApi(page)
+  const org = await createOrgViaApi(page, orgName)
+  const brand = await createBrandViaApi(page, org.id, 'Summit')
+  return { user, org, brand, url: `/orgs/${org.id}/brands/${brand.id}` }
+}
+
+/** Signs in an existing user in this page's context through the API (a second session). */
+export async function logInViaApi(page: Page, user: TestUser): Promise<void> {
+  const response = await page.context().request.post('/api/auth/login', {
+    data: user,
+    headers: ORIGIN_HEADER,
+  })
+  expect(response.status(), await response.text()).toBe(200)
 }

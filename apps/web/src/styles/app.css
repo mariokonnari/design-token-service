@@ -271,3 +271,206 @@ p {
 .details dd {
   margin: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   The Theme Editor (ADR 0017). Same rules as above: semantic variables only.
+   --------------------------------------------------------------------------- */
+
+.page--wide {
+  max-width: 90rem;
+}
+
+.details--inline {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.coverage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--semantic-space-gap-md);
+}
+
+.editor__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--semantic-space-gap-md);
+  align-items: start;
+}
+
+/* Two columns once there is room: the editor on the left, the live preview on the right. */
+@media (min-width: 60rem) {
+  .editor__columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .editor__side {
+    position: sticky;
+    top: var(--semantic-space-inset-md);
+  }
+}
+
+.editor__main,
+.editor__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+  min-width: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+  padding: var(--semantic-space-inset-md);
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+}
+
+.panel__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--semantic-space-gap-md);
+}
+
+/* Headings that receive focus from code (after a save, a delete, a create). */
+.panel h2:focus {
+  outline: none;
+}
+
+.panel h2:focus-visible {
+  outline: var(--semantic-border-width-focus) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: 0.25rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--semantic-space-gap-sm);
+}
+
+.token-group h3 {
+  margin: var(--semantic-space-inset-sm) 0 var(--semantic-space-inset-xs);
+  color: var(--semantic-color-text-muted);
+  font-size: var(--semantic-font-size-sm);
+  font-weight: var(--semantic-font-weight-strong);
+}
+
+.token-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.token-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--semantic-space-gap-sm) var(--semantic-space-gap-md);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: var(--semantic-space-inset-xs) var(--semantic-space-inset-sm);
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+  background-color: var(--semantic-color-surface);
+  color: var(--semantic-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.token-item:hover {
+  background-color: var(--semantic-color-surface-hover);
+}
+
+.token-item:focus-visible {
+  outline: var(--semantic-border-width-focus) solid
+    var(--semantic-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The selected token: a thicker border AND bold text, never color alone. */
+.token-item[aria-current='true'] {
+  border-width: var(--semantic-border-width-focus);
+  border-color: var(--semantic-color-text);
+  font-weight: var(--semantic-font-weight-strong);
+}
+
+.token-item__path {
+  overflow-wrap: anywhere;
+}
+
+.token-item__type,
+.token-item__value {
+  color: var(--semantic-color-text-muted);
+  font-size: var(--semantic-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Decorative: the value is always also written as text. */
+.swatch {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+}
+
+.issue-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+}
+
+/* The stage is the only part of the page in the preview theme. */
+.preview__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-gap-md);
+  padding: var(--semantic-space-inset-md);
+  border: var(--semantic-border-width-control) solid
+    var(--semantic-color-border);
+  border-radius: var(--semantic-radius-control);
+  background-color: var(--semantic-color-surface);
+  color: var(--semantic-color-text);
+  font-family: var(--semantic-font-family-sans);
+  font-size: var(--semantic-font-size-md);
+}
+
+.preview__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--semantic-space-gap-sm);
+}
+
+@media (forced-colors: active) {
+  .panel,
+  .token-item,
+  .preview__stage {
+    border-color: CanvasText;
+  }
+
+  .token-item[aria-current='true'] {
+    border-color: Highlight;
+  }
+
+  .token-item:focus-visible,
+  .panel h2:focus-visible {
+    outline-color: Highlight;
+  }
+}

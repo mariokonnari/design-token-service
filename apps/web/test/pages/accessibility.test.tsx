@@ -65,6 +65,9 @@ const PAGES: {
       ...SIGNED_IN,
       'GET /api/orgs': { body: { organizations: [acme] } },
       [`GET ${brandsPath}/${summit.id}`]: { body: { brand: summit } },
+      [`GET ${brandsPath}/${summit.id}/tokens`]: {
+        body: { draftRevision: 0, tokens: [] },
+      },
     },
     h1: 'Summit',
   },
